@@ -1,15 +1,15 @@
-const { createUnoRoom, joinUnoRoom, startUnoGame, handleUnoPlay, handleUnoDraw, unoRooms, broadcastUnoAll, unoSend } = require('./uno');
-
+const express = require('express');
 const { WebSocketServer } = require('ws');
 const http = require('http');
 const path = require('path');
-
+const { createUnoRoom, joinUnoRoom, startUnoGame, handleUnoPlay, handleUnoDraw, unoRooms, broadcastUnoAll, unoSend } = require('./uno');
+ 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
-
+ 
 app.use(express.static(path.join(__dirname, '../public')));
-
+ 
 // ── BLAGUES ─────────────────────────────────────────────────────────────────
 const BLAGUES = [
   "🚿 Le saviez-vous ? Lilou a déjà pas pris sa douche pendant plus d'une semaine. Les voisins pensaient que c'était une nouvelle espèce.",
@@ -33,11 +33,11 @@ const BLAGUES = [
   "🪩 Le crâne de Brubru reflète tellement bien la lumière qu'on peut l'utiliser comme boule de discothèque.",
   "🏎️ Lilou conduit tellement mal que les radars ont peur d'elle.",
 ];
-
+ 
 function randBlague() {
   return BLAGUES[Math.floor(Math.random() * BLAGUES.length)];
 }
-
+ 
 // ── WORD PAIRS ──────────────────────────────────────────────────────────────
 const PAIRS = [
   // OL / Foot français
@@ -62,7 +62,7 @@ const PAIRS = [
   { theme: '📺 Séries', a: 'Lupin', b: 'Arsène Lupin' },
   { theme: '📺 Séries', a: 'Netflix', b: 'Disney+' },
   { theme: '📺 Séries', a: 'Peaky Blinders', b: 'Boardwalk Empire' },
-  { theme: '📺 Séries', a: 'The Bear', b: 'Chef\'s Table' },
+  { theme: '📺 Séries', a: 'The Bear', b: "Chef's Table" },
   // Musique
   { theme: '🎵 Musique', a: 'Ninho', b: 'Niska' },
   { theme: '🎵 Musique', a: 'Jul', b: 'SCH' },
@@ -83,21 +83,21 @@ const PAIRS = [
   { theme: '🦁 Lyon', a: 'Part-Dieu', b: 'Confluence' },
   // Resto / Food
   { theme: '🍔 Food', a: 'Big Mac', b: 'Whopper' },
-  { theme: '🍔 Food', a: 'McDonald\'s', b: 'Burger King' },
+  { theme: '🍔 Food', a: "McDonald's", b: 'Burger King' },
   { theme: '🍔 Food', a: 'Sushi', b: 'Tacos' },
   { theme: '🍔 Food', a: 'Nutella', b: 'Speculoos' },
 ];
-
+ 
 // ── ROOMS ───────────────────────────────────────────────────────────────────
-const rooms = new Map(); // code → room
-
+const rooms = new Map();
+ 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   let code = '';
   for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return rooms.has(code) ? makeCode() : code;
 }
-
+ 
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -106,16 +106,16 @@ function shuffle(arr) {
   }
   return a;
 }
-
+ 
 function broadcast(room, msg) {
   const data = JSON.stringify(msg);
   room.clients.forEach(ws => { if (ws.readyState === 1) ws.send(data); });
 }
-
+ 
 function send(ws, msg) {
   if (ws.readyState === 1) ws.send(JSON.stringify(msg));
 }
-
+ 
 function roomState(room) {
   return {
     type: 'room_state',
@@ -126,7 +126,7 @@ function roomState(room) {
     theme: room.theme || null,
   };
 }
-
+ 
 function startGame(room) {
   const pair = PAIRS[Math.floor(Math.random() * PAIRS.length)];
   room.theme = pair.theme;
@@ -135,8 +135,7 @@ function startGame(room) {
   room.round = (room.round || 0) + 1;
   room.eliminated = [];
   room.votes = {};
-
-  // 3 civils get word A, 1 undercover gets word B (random who)
+ 
   const shuffled = shuffle(room.players);
   const ucIdx = Math.floor(Math.random() * shuffled.length);
   shuffled.forEach((p, i) => {
@@ -144,8 +143,7 @@ function startGame(room) {
     p.word = i === ucIdx ? pair.b : pair.a;
     p.alive = true;
   });
-
-  // send each player their card
+ 
   room.players.forEach(p => {
     send(p.ws, {
       type: 'your_card',
@@ -155,10 +153,10 @@ function startGame(room) {
       round: room.round,
     });
   });
-
+ 
   broadcast(room, { type: 'phase', phase: 'reveal', theme: pair.theme, round: room.round });
 }
-
+ 
 function sendVoteState(room) {
   const alive = room.players.filter(p => p.alive);
   broadcast(room, {
@@ -171,26 +169,25 @@ function sendVoteState(room) {
     total: alive.length,
   });
 }
-
+ 
 function checkWin(room) {
   const alive = room.players.filter(p => p.alive);
   const ucAlive = alive.filter(p => p.role === 'undercover');
   const civAlive = alive.filter(p => p.role === 'civil');
-
   if (ucAlive.length === 0) return 'civils';
   if (ucAlive.length >= civAlive.length) return 'undercover';
   return null;
 }
-
+ 
 // ── WEBSOCKET ────────────────────────────────────────────────────────────────
 wss.on('connection', ws => {
   ws.roomCode = null;
   ws.playerName = null;
-
+ 
   ws.on('message', raw => {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
-
+ 
     // CREATE ROOM
     if (msg.type === 'create_room') {
       const code = makeCode();
@@ -212,7 +209,7 @@ wss.on('connection', ws => {
       send(ws, roomState(room));
       return;
     }
-
+ 
     // JOIN ROOM
     if (msg.type === 'join_room') {
       const room = rooms.get(msg.code.toUpperCase());
@@ -231,14 +228,14 @@ wss.on('connection', ws => {
       broadcast(room, roomState(room));
       return;
     }
-
+ 
     // ── UNO MESSAGES ──
     if (msg.type === 'uno_create') {
       const code = 'U' + makeCode().slice(1);
       const room = createUnoRoom(code, ws, msg.name);
       ws.unoCode = code;
       unoSend(ws, { type: 'uno_created', code, isHost: true });
-      unoSend(ws, { type: 'uno_lobby', code, players: room.players.map(p=>p.name), isHost: true });
+      unoSend(ws, { type: 'uno_lobby', code, players: room.players.map(p => p.name), isHost: true });
       return;
     }
     if (msg.type === 'uno_join') {
@@ -249,7 +246,7 @@ wss.on('connection', ws => {
       joinUnoRoom(room, ws, msg.name);
       ws.unoCode = msg.code.toUpperCase();
       unoSend(ws, { type: 'uno_joined', code: room.code, isHost: false });
-      broadcastUnoAll(room, { type: 'uno_lobby', code: room.code, players: room.players.map(p=>p.name), isHost: false });
+      broadcastUnoAll(room, { type: 'uno_lobby', code: room.code, players: room.players.map(p => p.name), isHost: false });
       return;
     }
     if (msg.type === 'uno_start') {
@@ -281,13 +278,13 @@ wss.on('connection', ws => {
       startUnoGame(room);
       return;
     }
-
+ 
     // ── UNDERCOVER MESSAGES ──
     const room = ws.roomCode ? rooms.get(ws.roomCode) : null;
     if (!room) return;
     const me = room.players.find(p => p.ws === ws);
     if (!me) return;
-
+ 
     // START GAME (host only)
     if (msg.type === 'start_game') {
       if (!me.isHost) return;
@@ -295,7 +292,7 @@ wss.on('connection', ws => {
       startGame(room);
       return;
     }
-
+ 
     // READY (card seen)
     if (msg.type === 'card_seen') {
       me.cardSeen = true;
@@ -311,7 +308,7 @@ wss.on('connection', ws => {
       }
       return;
     }
-
+ 
     // OPEN VOTE (host)
     if (msg.type === 'open_vote') {
       if (!me.isHost) return;
@@ -321,16 +318,15 @@ wss.on('connection', ws => {
       sendVoteState(room);
       return;
     }
-
+ 
     // CAST VOTE
     if (msg.type === 'vote') {
       if (room.phase !== 'vote') return;
       room.votes[me.name] = msg.target;
       sendVoteState(room);
-
+ 
       const alive = room.players.filter(p => p.alive);
       if (Object.keys(room.votes).length === alive.length) {
-        // tally
         const counts = {};
         Object.values(room.votes).forEach(v => counts[v] = (counts[v] || 0) + 1);
         const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
@@ -338,7 +334,7 @@ wss.on('connection', ws => {
         const elim = room.players.find(p => p.name === eliminated);
         if (elim) elim.alive = false;
         room.eliminated.push(eliminated);
-
+ 
         const win = checkWin(room);
         if (win) {
           room.phase = 'result';
@@ -351,11 +347,7 @@ wss.on('connection', ws => {
         } else {
           room.phase = 'discuss';
           room.votes = {};
-          broadcast(room, {
-            type: 'eliminated',
-            name: eliminated,
-            role: elim ? elim.role : '?',
-          });
+          broadcast(room, { type: 'eliminated', name: eliminated, role: elim ? elim.role : '?' });
           broadcast(room, { type: 'blague', text: randBlague() });
           broadcast(room, { type: 'phase', phase: 'discuss' });
           broadcast(room, roomState(room));
@@ -363,7 +355,7 @@ wss.on('connection', ws => {
       }
       return;
     }
-
+ 
     // PLAY AGAIN (host)
     if (msg.type === 'play_again') {
       if (!me.isHost) return;
@@ -376,8 +368,8 @@ wss.on('connection', ws => {
       broadcast(room, roomState(room));
       return;
     }
-
-    // KICK / CHANGE PLAYERS (host)
+ 
+    // KICK (host)
     if (msg.type === 'kick') {
       if (!me.isHost || room.phase !== 'lobby') return;
       const idx = room.players.findIndex(p => p.name === msg.name);
@@ -391,7 +383,7 @@ wss.on('connection', ws => {
       return;
     }
   });
-
+ 
   ws.on('close', () => {
     if (!ws.roomCode) return;
     const room = rooms.get(ws.roomCode);
@@ -407,6 +399,6 @@ wss.on('connection', ws => {
     }
   });
 });
-
+ 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🔥 Undercover running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🔥 Boubistou Games running on port ${PORT}`));
