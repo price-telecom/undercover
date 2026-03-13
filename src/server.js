@@ -1,4 +1,5 @@
-const express = require('express');
+const { createUnoRoom, joinUnoRoom, startUnoGame, handleUnoPlay, handleUnoDraw, unoRooms, broadcastUnoAll, unoSend } = require('./uno');
+
 const { WebSocketServer } = require('ws');
 const http = require('http');
 const path = require('path');
@@ -231,6 +232,57 @@ wss.on('connection', ws => {
       return;
     }
 
+    // ── UNO MESSAGES ──
+    if (msg.type === 'uno_create') {
+      const code = 'U' + makeCode().slice(1);
+      const room = createUnoRoom(code, ws, msg.name);
+      ws.unoCode = code;
+      unoSend(ws, { type: 'uno_created', code, isHost: true });
+      unoSend(ws, { type: 'uno_lobby', code, players: room.players.map(p=>p.name), isHost: true });
+      return;
+    }
+    if (msg.type === 'uno_join') {
+      const room = unoRooms().get(msg.code.toUpperCase());
+      if (!room) { unoSend(ws, { type: 'error', msg: 'Salle UNO introuvable !' }); return; }
+      if (room.phase !== 'lobby') { unoSend(ws, { type: 'error', msg: 'Partie déjà en cours.' }); return; }
+      if (room.players.find(p => p.name.toLowerCase() === msg.name.toLowerCase())) { unoSend(ws, { type: 'error', msg: 'Prénom déjà pris !' }); return; }
+      joinUnoRoom(room, ws, msg.name);
+      ws.unoCode = msg.code.toUpperCase();
+      unoSend(ws, { type: 'uno_joined', code: room.code, isHost: false });
+      broadcastUnoAll(room, { type: 'uno_lobby', code: room.code, players: room.players.map(p=>p.name), isHost: false });
+      return;
+    }
+    if (msg.type === 'uno_start') {
+      const room = ws.unoCode ? unoRooms().get(ws.unoCode) : null;
+      if (!room) return;
+      const me = room.players.find(p => p.ws === ws);
+      if (!me || !me.isHost) return;
+      if (room.players.length < 2) { unoSend(ws, { type: 'error', msg: 'Il faut au moins 2 joueurs !' }); return; }
+      startUnoGame(room);
+      return;
+    }
+    if (msg.type === 'uno_play') {
+      const room = ws.unoCode ? unoRooms().get(ws.unoCode) : null;
+      if (!room) return;
+      handleUnoPlay(room, ws, msg.cardId, msg.chosenColor);
+      return;
+    }
+    if (msg.type === 'uno_draw') {
+      const room = ws.unoCode ? unoRooms().get(ws.unoCode) : null;
+      if (!room) return;
+      handleUnoDraw(room, ws);
+      return;
+    }
+    if (msg.type === 'uno_again') {
+      const room = ws.unoCode ? unoRooms().get(ws.unoCode) : null;
+      if (!room) return;
+      const me = room.players.find(p => p.ws === ws);
+      if (!me || !me.isHost) return;
+      startUnoGame(room);
+      return;
+    }
+
+    // ── UNDERCOVER MESSAGES ──
     const room = ws.roomCode ? rooms.get(ws.roomCode) : null;
     if (!room) return;
     const me = room.players.find(p => p.ws === ws);
@@ -239,7 +291,7 @@ wss.on('connection', ws => {
     // START GAME (host only)
     if (msg.type === 'start_game') {
       if (!me.isHost) return;
-      if (room.players.length !== 4) { send(ws, { type: 'error', msg: 'Il faut exactement 4 joueurs !' }); return; }
+      if (room.players.length < 3) { send(ws, { type: 'error', msg: 'Il faut au moins 3 joueurs !' }); return; }
       startGame(room);
       return;
     }
