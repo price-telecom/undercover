@@ -245,7 +245,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
   <div class="result-emoji" id="elim-emoji">💀</div>
   <div class="result-title" id="elim-name"></div>
   <div class="result-sub" id="elim-role"></div>
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.4rem;width:100%;max-width:340px;text-align:center;margin-bottom:1rem">
+  <div id="elim-word-section" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.4rem;width:100%;max-width:340px;text-align:center;margin-bottom:1rem">
     <p style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem">Son mot était</p>
     <p style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--ember)" id="elim-word"></p>
   </div>
@@ -456,7 +456,14 @@ function handleMsg(msg) {
     document.getElementById('elim-emoji').textContent=isUC?'🕵️':'💀';
     document.getElementById('elim-name').textContent=msg.name+' est éliminé !';
     document.getElementById('elim-role').textContent=isUC?"C'était l'Undercover 😱":"C'était un Civil 😅";
-    document.getElementById('elim-word').textContent=msg.word;
+    // Only reveal word if undercover
+    const wordSection=document.getElementById('elim-word-section');
+    if(isUC){
+      wordSection.style.display='block';
+      document.getElementById('elim-word').textContent=msg.word;
+    } else {
+      wordSection.style.display='none';
+    }
     document.getElementById('elim-blague').textContent=msg.blague;
     document.getElementById('elim-sofar').innerHTML=msg.eliminatedSoFar.map(n=>`<span style="display:inline-block;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.2rem .6rem;margin:.2rem;font-size:.85rem">💀 ${n}</span>`).join('');
     document.getElementById('elim-continue-btn').style.display=isHost?'block':'none';
