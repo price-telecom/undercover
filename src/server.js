@@ -310,6 +310,7 @@ wss.on('connection', ws => {
  
     if (msg.type === 'vote') {
       if (room.phase !== 'vote' || !me.alive) return;
+      if (msg.target === me.name) return;
       room.votes[me.name] = msg.target;
       sendVoteState(room);
       const alive = room.players.filter(p => p.alive);
@@ -326,11 +327,23 @@ wss.on('connection', ws => {
           broadcast(room, { type: 'game_over', winner: win, players: room.players.map(p => ({ name: p.name, role: p.role, word: p.word, alive: p.alive })), eliminated });
         } else {
           room.votes = {};
-          broadcast(room, { type: 'eliminated', name: eliminated, role: elim ? elim.role : '?' });
-          broadcast(room, { type: 'blague', text: randBlague() });
-          startCluePhase(room);
+          room.phase = 'eliminated_screen';
+          broadcast(room, {
+            type: 'show_eliminated',
+            name: eliminated,
+            role: elim ? elim.role : '?',
+            word: elim ? elim.word : '?',
+            blague: randBlague(),
+            eliminatedSoFar: room.eliminated,
+          });
         }
       }
+      return;
+    }
+ 
+    if (msg.type === 'continue_after_elim') {
+      if (!me.isHost) return;
+      startCluePhase(room);
       return;
     }
  
