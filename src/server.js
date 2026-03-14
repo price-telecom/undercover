@@ -1,278 +1,17 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Boubistou Games 🔥</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #0c0905; --bg2: #17100a; --card: #1e1409; --border: #3a2610;
-  --fire: #ff6b1a; --ember: #ffb347; --text: #f4e4c1; --muted: #8a6a3a;
-  --green: #7ecb8f; --red: #e05c5c; --smoke: #2a1e10;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html,body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: 'Crimson Pro', serif; overflow-x: hidden; }
-body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh; background:radial-gradient(ellipse 70% 50% at 50% 100%, rgba(255,107,26,.14) 0%, transparent 80%); pointer-events:none; z-index:0; }
+const express = require('express');
+const { WebSocketServer } = require('ws');
+const http = require('http');
+const path = require('path');
+const { createUnoRoom, joinUnoRoom, startUnoGame, handleUnoPlay, handleUnoDraw, unoRooms, broadcastUnoAll, unoSend } = require('./uno');
 
-.page { display:none; min-height:100vh; flex-direction:column; align-items:center; justify-content:center; padding:1.8rem 1.25rem; position:relative; z-index:1; }
-.page.active { display:flex; }
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
 
-/* typography */
-.fire-logo { font-family:'Playfair Display',serif; font-size:clamp(3rem,14vw,5rem); font-weight:900; line-height:.9; text-align:center; }
-.fire-logo em { font-style:italic; background:linear-gradient(160deg,#ffb347 0%,#ff6b1a 45%,#ee0979 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-.tagline { font-style:italic; color:var(--muted); font-size:1rem; text-align:center; margin-top:.4rem; }
-.section-label { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--ember); text-align:center; margin-bottom:1.2rem; }
-.hint { color:var(--muted); font-size:.88rem; font-style:italic; text-align:center; line-height:1.5; }
+app.use(express.static(path.join(__dirname, '../public')));
 
-/* inputs */
-.inp { width:100%; max-width:340px; background:var(--bg2); border:1px solid var(--border); border-radius:11px; padding:.75rem 1rem; color:var(--text); font-family:'Crimson Pro',serif; font-size:1.05rem; outline:none; transition:border-color .2s; margin-bottom:.8rem; }
-.inp:focus { border-color:var(--fire); }
-.inp::placeholder { color:var(--muted); }
-
-/* buttons */
-.btn { width:100%; max-width:340px; padding:.9rem; border-radius:14px; border:none; cursor:pointer; font-family:'Playfair Display',serif; font-size:1.05rem; font-weight:700; letter-spacing:.02em; transition:all .15s; }
-.btn-fire { background:linear-gradient(135deg,#ff6b1a,#ee0979); color:#fff; box-shadow:0 4px 28px rgba(255,107,26,.3); }
-.btn-fire:active { transform:scale(.97); }
-.btn-fire:disabled { opacity:.4; cursor:default; transform:none; }
-.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); margin-top:.5rem; }
-.btn-outline:active { background:var(--smoke); }
-.btn-ember { background:rgba(255,179,71,.12); border:1px solid rgba(255,179,71,.3); color:var(--ember); margin-top:.5rem; }
-
-/* code display */
-.code-big { font-family:'Playfair Display',serif; font-size:3.2rem; font-weight:900; letter-spacing:.18em; color:var(--ember); text-align:center; background:var(--bg2); border:1.5px solid var(--border); border-radius:14px; padding:1rem 1.5rem; margin-bottom:1rem; width:100%; max-width:340px; }
-.code-input { width:100%; max-width:340px; background:var(--bg2); border:1.5px solid var(--border); border-radius:11px; padding:.85rem 1rem; color:var(--ember); font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; letter-spacing:.2em; text-align:center; outline:none; text-transform:uppercase; margin-bottom:.8rem; }
-.code-input:focus { border-color:var(--fire); }
-
-/* player list */
-.player-list { width:100%; max-width:340px; display:flex; flex-direction:column; gap:.5rem; margin-bottom:1rem; }
-.player-row { display:flex; align-items:center; justify-content:space-between; background:var(--bg2); border:1px solid var(--border); border-radius:11px; padding:.65rem 1rem; }
-.player-row .pname { font-size:1rem; font-weight:600; }
-.player-row .ptag { font-size:.72rem; color:var(--muted); font-style:italic; }
-.player-row .kick-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; }
-
-/* flip card */
-.flip-wrap { width:240px; height:320px; perspective:1200px; cursor:pointer; margin:1.5rem 0; }
-.flip-inner { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .6s cubic-bezier(.4,0,.2,1); }
-.flip-wrap.flipped .flip-inner { transform:rotateY(180deg); }
-.flip-face { position:absolute; inset:0; backface-visibility:hidden; border-radius:20px; border:1px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.6rem; text-align:center; }
-.flip-front { background:var(--card); background-image:radial-gradient(ellipse at 50% 90%, rgba(255,107,26,.15) 0%, transparent 65%); }
-.flip-back { background:var(--bg2); background-image:radial-gradient(ellipse at 50% 90%, rgba(255,107,26,.12) 0%, transparent 65%); transform:rotateY(180deg); }
-.card-icon { font-size:3.5rem; margin-bottom:.8rem; }
-.card-tap { color:var(--muted); font-style:italic; font-size:.88rem; }
-.role-badge { font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; padding:.3rem .7rem; border-radius:8px; margin-bottom:.9rem; font-family:'Crimson Pro',serif; font-weight:600; display:inline-block; }
-.rb-civil { background:rgba(126,203,143,.12); color:var(--green); border:1px solid rgba(126,203,143,.3); }
-.rb-undercover { background:rgba(224,92,92,.12); color:var(--red); border:1px solid rgba(224,92,92,.3); }
-.card-word { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; margin:.3rem 0 .6rem; color:var(--ember); }
-.card-sub { color:var(--muted); font-size:.85rem; font-style:italic; line-height:1.5; }
-
-/* clue phase */
-.clue-box { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1.4rem; width:100%; max-width:340px; margin-bottom:1rem; text-align:center; }
-.clue-round-badge { display:inline-block; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; padding:.25rem .7rem; border-radius:8px; background:rgba(255,179,71,.12); color:var(--ember); border:1px solid rgba(255,179,71,.3); margin-bottom:.8rem; }
-.clue-inp { width:100%; background:var(--bg2); border:2px solid var(--border); border-radius:12px; padding:.85rem 1rem; color:var(--text); font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; text-align:center; outline:none; transition:border-color .2s; margin-bottom:.8rem; }
-.clue-inp:focus { border-color:var(--fire); }
-.clue-inp::placeholder { color:var(--muted); font-size:1rem; font-weight:400; }
-.waiting-chips { display:flex; flex-wrap:wrap; gap:.4rem; justify-content:center; margin-top:.8rem; }
-.wchip { font-size:.75rem; padding:.25rem .6rem; border-radius:8px; background:var(--bg2); border:1px solid var(--border); color:var(--muted); }
-.wchip.done { border-color:var(--green); color:var(--green); background:rgba(126,203,143,.08); }
-
-/* clue reveal */
-.clue-reveal-list { width:100%; max-width:340px; display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.2rem; }
-.clue-item { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:.9rem 1.1rem; display:flex; justify-content:space-between; align-items:center; animation:popIn .3s ease; }
-@keyframes popIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-.clue-item .ci-name { font-size:.8rem; color:var(--muted); font-style:italic; }
-.clue-item .ci-clue { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--ember); }
-
-/* history */
-.history-section { width:100%; max-width:340px; margin-bottom:1rem; }
-.history-round { margin-bottom:.8rem; }
-.history-round-title { font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
-
-/* vote */
-.vote-list { width:100%; max-width:340px; display:flex; flex-direction:column; gap:.6rem; margin-bottom:1rem; }
-.vote-item { display:flex; align-items:center; justify-content:space-between; background:var(--bg2); border:1.5px solid var(--border); border-radius:13px; padding:.7rem 1rem; transition:all .15s; cursor:pointer; }
-.vote-item:active { background:var(--smoke); }
-.vote-item.selected { border-color:var(--fire); background:rgba(255,107,26,.08); }
-.vote-item.voted { opacity:.5; cursor:default; }
-.vote-name { font-size:1rem; font-weight:600; }
-.vote-count { font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--ember); }
-
-/* result */
-.result-emoji { font-size:5rem; margin-bottom:1rem; animation:pop .5s cubic-bezier(.175,.885,.32,1.275); }
-@keyframes pop { 0%{transform:scale(0)} 100%{transform:scale(1)} }
-.result-title { font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:900; text-align:center; margin-bottom:.3rem; }
-.result-sub { color:var(--muted); font-style:italic; font-size:.95rem; text-align:center; margin-bottom:1.5rem; }
-.reveal-list { width:100%; max-width:340px; display:flex; flex-direction:column; gap:.5rem; margin-bottom:1.5rem; }
-.reveal-item { display:flex; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--border); border-radius:11px; padding:.7rem 1rem; }
-.ri-name { font-weight:600; font-size:.95rem; }
-.ri-role { font-size:.7rem; font-style:italic; color:var(--muted); }
-.ri-word { font-family:'Playfair Display',serif; font-size:.9rem; color:var(--ember); }
-
-/* phase banner */
-.phase-banner { background:var(--smoke); border:1px solid var(--border); border-radius:12px; padding:.9rem 1.2rem; width:100%; max-width:340px; text-align:center; margin-bottom:1rem; }
-.phase-banner strong { color:var(--ember); font-family:'Playfair Display',serif; font-size:1.1rem; }
-.phase-banner p { color:var(--muted); font-size:.88rem; font-style:italic; margin-top:.2rem; }
-
-/* blague */
-.blague-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500; display:flex; align-items:center; justify-content:center; padding:1.5rem; opacity:0; transition:opacity .3s; pointer-events:none; }
-.blague-overlay.show { opacity:1; pointer-events:all; }
-.blague-box { background:var(--card); border:1.5px solid var(--border); border-radius:22px; padding:2rem 1.5rem; max-width:340px; width:100%; text-align:center; transform:translateY(20px); transition:transform .3s; }
-.blague-overlay.show .blague-box { transform:translateY(0); }
-.blague-title { font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--ember); margin-bottom:1rem; }
-.blague-text { font-size:1.05rem; line-height:1.6; color:var(--text); font-style:italic; margin-bottom:1.5rem; }
-.blague-btn { background:linear-gradient(135deg,#ff6b1a,#ee0979); color:#fff; border:none; border-radius:12px; padding:.75rem 2rem; font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; cursor:pointer; }
-
-/* toast */
-.toast { position:fixed; top:1.2rem; left:50%; transform:translateX(-50%); background:var(--smoke); border:1px solid var(--border); border-radius:10px; padding:.65rem 1.2rem; font-size:.88rem; color:var(--text); z-index:999; opacity:0; transition:opacity .2s; pointer-events:none; white-space:nowrap; }
-.toast.show { opacity:1; }
-.dots::after { content:''; animation:dots 1.4s steps(4,end) infinite; }
-@keyframes dots { 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} }
-.full-w { width:100%; max-width:340px; }
-.gap { margin-top:.5rem; }
-</style>
-</head>
-<body>
-
-<div class="toast" id="toast"></div>
-
-<!-- BLAGUE -->
-<div class="blague-overlay" id="blague-overlay" onclick="closeBlague()">
-  <div class="blague-box" onclick="event.stopPropagation()">
-    <div class="blague-title">💡 Le saviez-vous ?</div>
-    <div class="blague-text" id="blague-text"></div>
-    <button class="blague-btn" onclick="closeBlague()">😂 Ok ok</button>
-  </div>
-</div>
-
-<!-- HOME -->
-<div class="page active" id="p-home">
-  <div class="fire-logo"><em>Boubistou</em><br>Games</div>
-  <p class="tagline">Undercover · chacun sur son tel</p>
-  <div style="height:2rem"></div>
-  <button class="btn btn-fire" onclick="showPage('p-create')" style="margin-bottom:.5rem">🔥 Créer une salle</button>
-  <button class="btn btn-outline" onclick="showPage('p-join')">📲 Rejoindre</button>
-  <button class="btn btn-ember full-w" style="margin-top:1.2rem" onclick="showRandomBlague()">💡 Blague du groupe</button>
-  <button class="btn btn-outline full-w" style="margin-top:.5rem;border-color:#2980b9;color:#7aa5c8" onclick="window.location.href='/uno.html'">🃏 Jouer à l'UNO</button>
-</div>
-
-<!-- CREATE -->
-<div class="page" id="p-create">
-  <div class="section-label">Créer une salle</div>
-  <input id="create-name" class="inp" placeholder="Ton prénom..." maxlength="16">
-  <button class="btn btn-fire" onclick="createRoom()">Créer →</button>
-  <button class="btn btn-outline full-w" onclick="showPage('p-home')">← Retour</button>
-</div>
-
-<!-- JOIN -->
-<div class="page" id="p-join">
-  <div class="section-label">Rejoindre</div>
-  <input id="join-code" class="code-input" placeholder="CODE" maxlength="4" oninput="this.value=this.value.toUpperCase()">
-  <input id="join-name" class="inp" placeholder="Ton prénom..." maxlength="16">
-  <button class="btn btn-fire" onclick="joinRoom()">Rejoindre →</button>
-  <button class="btn btn-outline full-w" onclick="showPage('p-home')">← Retour</button>
-</div>
-
-<!-- LOBBY -->
-<div class="page" id="p-lobby">
-  <div class="section-label">Salle</div>
-  <div class="code-big" id="lobby-code">----</div>
-  <p class="hint" id="lobby-hint" style="margin-bottom:1rem">Les autres entrent ce code sur leur tel</p>
-  <p class="hint" id="lobby-count" style="margin-bottom:.8rem"></p>
-  <div class="player-list" id="lobby-players"></div>
-  <button class="btn btn-fire" id="lobby-start-btn" onclick="sendMsg({type:'start_game'})" disabled>Lancer</button>
-  <p class="hint gap" id="lobby-wait"><span class="dots">En attente</span></p>
-</div>
-
-<!-- REVEAL (flip card) -->
-<div class="page" id="p-reveal">
-  <p class="section-label" id="reveal-theme">Thème</p>
-  <p class="hint" style="margin-bottom:.5rem">Retourne ta carte et mémorise ton mot.</p>
-  <p style="font-size:.75rem;color:var(--red);text-align:center;margin-bottom:1.5rem">⚠️ Ne montre à personne !</p>
-  <div class="flip-wrap" id="flip-card" onclick="flipCard()">
-    <div class="flip-inner">
-      <div class="flip-face flip-front">
-        <div class="card-icon">🃏</div>
-        <p class="card-tap">Appuie pour voir<br>ta carte secrète</p>
-      </div>
-      <div class="flip-face flip-back" id="flip-back-content"></div>
-    </div>
-  </div>
-  <div id="reveal-waiting" style="display:none;text-align:center">
-    <p class="hint">En attente des autres<span class="dots"></span></p>
-    <p class="hint" id="reveal-seen-count" style="margin-top:.3rem"></p>
-  </div>
-  <button class="btn btn-fire full-w" id="reveal-ok-btn" onclick="cardSeen()" style="display:none">✓ J'ai mémorisé mon mot</button>
-</div>
-
-<!-- CLUE (écriture des indices) -->
-<div class="page" id="p-clue">
-  <div class="clue-box">
-    <span class="clue-round-badge" id="clue-round-badge">Tour 1</span>
-    <p class="hint" style="margin-bottom:1rem">Écris un mot qui décrit ton mot secret.<br><em>1 mot uniquement, sois malin !</em></p>
-    <input id="clue-input" class="clue-inp" placeholder="Ton indice..." maxlength="40" onkeydown="if(event.key==='Enter')submitClue()">
-    <button class="btn btn-fire full-w" id="clue-submit-btn" onclick="submitClue()">Envoyer 🔥</button>
-  </div>
-  <div id="clue-waiting-area" style="display:none;text-align:center;width:100%;max-width:340px">
-    <p class="hint">En attente des autres<span class="dots"></span></p>
-    <div class="waiting-chips" id="waiting-chips"></div>
-  </div>
-</div>
-
-<!-- CLUE REVEAL (tous les indices visibles) -->
-<div class="page" id="p-clue-reveal">
-  <div class="section-label" id="clue-reveal-title">Les indices 🔍</div>
-  <div class="clue-reveal-list" id="clue-reveal-list"></div>
-  <div class="history-section" id="history-section" style="display:none">
-    <p style="font-size:.7rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;text-align:center">Tours précédents</p>
-    <div id="history-list"></div>
-  </div>
-  <button class="btn btn-fire full-w" id="clue-vote-btn" onclick="sendMsg({type:'open_vote'})" style="display:none">🗳️ Passer au vote</button>
-  <p class="hint gap" id="clue-nonhost">L'hôte va lancer le vote...</p>
-</div>
-
-<!-- VOTE -->
-<div class="page" id="p-vote">
-  <div class="phase-banner">
-    <strong>🗳️ Vote</strong>
-    <p>Qui est l'undercover ? Appuie pour voter</p>
-  </div>
-  <p class="hint" style="margin-bottom:1rem" id="vote-status">Appuie sur un joueur</p>
-  <div class="vote-list" id="vote-list"></div>
-</div>
-
-<!-- ELIMINATED SCREEN -->
-<div class="page" id="p-eliminated">
-  <div class="result-emoji" id="elim-emoji">💀</div>
-  <div class="result-title" id="elim-name"></div>
-  <div class="result-sub" id="elim-role"></div>
-  <div id="elim-word-section" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.4rem;width:100%;max-width:340px;text-align:center;margin-bottom:1rem">
-    <p style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem">Son mot était</p>
-    <p style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--ember)" id="elim-word"></p>
-  </div>
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.4rem;width:100%;max-width:340px;text-align:center;margin-bottom:1.5rem">
-    <p style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Éliminés jusqu'ici</p>
-    <div id="elim-sofar"></div>
-  </div>
-  <div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:14px;padding:1rem 1.2rem;width:100%;max-width:340px;text-align:center;margin-bottom:1.5rem">
-    <p style="font-size:.85rem;font-style:italic;color:var(--text)" id="elim-blague"></p>
-  </div>
-  <button class="btn btn-fire full-w" id="elim-continue-btn" onclick="sendMsg({type:'continue_after_elim'})" style="display:none">Continuer →</button>
-  <p class="hint" id="elim-wait">L'hôte va continuer<span class="dots"></span></p>
-</div>
-
-<!-- RESULT -->
-<div class="page" id="p-result">
-  <div class="result-emoji" id="result-emoji">🏆</div>
-  <div class="result-title" id="result-title"></div>
-  <div class="result-sub" id="result-sub"></div>
-  <div class="reveal-list" id="result-list"></div>
-  <button class="btn btn-fire full-w" id="result-replay-btn" onclick="sendMsg({type:'play_again'})" style="display:none">🔥 Rejouer</button>
-  <button class="btn btn-outline full-w" onclick="leaveGame()">← Quitter</button>
-</div>
-
-<script>
-// ── BLAGUES ───────────────────────────────────────────────
-const BLAGUES_CLIENT = [
+// ── BLAGUES ──────────────────────────────────────────────────────────────────
+const BLAGUES = [
   "🚿 Le saviez-vous ? Lilou a déjà pas pris sa douche pendant plus d'une semaine. Les voisins pensaient que c'était une nouvelle espèce.",
   "💀 Brubru est vraiment une burne. C'est officiel, c'est même écrit dans le Larousse maintenant.",
   "🦵 La légende raconte que Brubru a des jambes de coq. En fait il s'est rasé les cheveux pour les mettre ailleurs.",
@@ -294,230 +33,361 @@ const BLAGUES_CLIENT = [
   "🪩 Le crâne de Brubru reflète tellement bien la lumière qu'on peut l'utiliser comme boule de discothèque.",
   "🏎️ Lilou conduit tellement mal que les radars ont peur d'elle.",
 ];
-function showBlague(text) { document.getElementById('blague-text').textContent=text; document.getElementById('blague-overlay').classList.add('show'); }
-function showRandomBlague() { showBlague(BLAGUES_CLIENT[Math.floor(Math.random()*BLAGUES_CLIENT.length)]); }
-function closeBlague() { document.getElementById('blague-overlay').classList.remove('show'); }
+function randBlague() { return BLAGUES[Math.floor(Math.random() * BLAGUES.length)]; }
 
-// ── STATE ─────────────────────────────────────────────────
-let ws=null, myName='', myRoom='', isHost=false, myRole=null, myWord=null, flipped=false, hasVoted=false, clueSubmitted=false;
+// ── WORD PAIRS ───────────────────────────────────────────────────────────────
+const PAIRS = [
+  { theme: '🔴 OL', a: 'Tolisso', b: 'Fekir' },
+  { theme: '🔴 OL', a: 'Lacazette', b: 'Benzema' },
+  { theme: '🔴 OL', a: 'Ligue 1', b: 'Champions League' },
+  { theme: '🔴 OL', a: 'Parc OL', b: 'Vélodrome' },
+  { theme: '🔴 OL', a: 'Bruno Genesio', b: 'Peter Bosz' },
+  { theme: '🔴 OL', a: 'Moussa Dembélé', b: 'Alexandre Lacazette' },
+  { theme: '⚽ Foot FR', a: 'Mbappé', b: 'Dembélé' },
+  { theme: '⚽ Foot FR', a: 'PSG', b: 'OM' },
+  { theme: '⚽ Foot FR', a: 'Didier Deschamps', b: 'Zinedine Zidane' },
+  { theme: '⚽ Foot FR', a: 'Giroud', b: 'Griezmann' },
+  { theme: '⚽ Foot FR', a: 'Neymar', b: 'Ibrahimovic' },
+  { theme: '⚽ Foot FR', a: 'Stade de France', b: 'Wembley' },
+  { theme: '⚽ Foot FR', a: 'Coupe de France', b: 'Coupe du Monde' },
+  { theme: '📺 Séries', a: 'Squid Game', b: 'Money Heist' },
+  { theme: '📺 Séries', a: 'Breaking Bad', b: 'Better Call Saul' },
+  { theme: '📺 Séries', a: 'Game of Thrones', b: 'House of the Dragon' },
+  { theme: '📺 Séries', a: 'Stranger Things', b: 'Dark' },
+  { theme: '📺 Séries', a: 'Lupin', b: 'Arsène Lupin' },
+  { theme: '📺 Séries', a: 'Netflix', b: 'Disney+' },
+  { theme: '📺 Séries', a: 'Peaky Blinders', b: 'Boardwalk Empire' },
+  { theme: '📺 Séries', a: 'The Bear', b: "Chef's Table" },
+  { theme: '🎵 Musique', a: 'Ninho', b: 'Niska' },
+  { theme: '🎵 Musique', a: 'Jul', b: 'SCH' },
+  { theme: '🎵 Musique', a: 'Drake', b: 'Travis Scott' },
+  { theme: '🎵 Musique', a: 'Spotify', b: 'Apple Music' },
+  { theme: '🎵 Musique', a: 'PNL', b: 'Hamza' },
+  { theme: '🎵 Musique', a: 'Booba', b: 'Kaaris' },
+  { theme: '🎮 Gaming', a: 'FIFA', b: 'PES' },
+  { theme: '🎮 Gaming', a: 'GTA V', b: 'GTA VI' },
+  { theme: '🎮 Gaming', a: 'PS5', b: 'Xbox Series X' },
+  { theme: '🎮 Gaming', a: 'Fortnite', b: 'Warzone' },
+  { theme: '🎮 Gaming', a: 'Ronaldo dans FIFA', b: 'Messi dans FIFA' },
+  { theme: '🦁 Lyon', a: 'Vieux Lyon', b: 'Croix-Rousse' },
+  { theme: '🦁 Lyon', a: 'Saône', b: 'Rhône' },
+  { theme: '🦁 Lyon', a: 'Traboules', b: 'Bouchons' },
+  { theme: '🦁 Lyon', a: 'Part-Dieu', b: 'Confluence' },
+  { theme: '🍔 Food', a: 'Big Mac', b: 'Whopper' },
+  { theme: '🍔 Food', a: "McDonald's", b: 'Burger King' },
+  { theme: '🍔 Food', a: 'Sushi', b: 'Tacos' },
+  { theme: '🍔 Food', a: 'Nutella', b: 'Speculoos' },
+];
 
-// ── WS ────────────────────────────────────────────────────
-function connect(onOpen) {
-  const proto = location.protocol==='https:'?'wss':'ws';
-  ws = new WebSocket(`${proto}://${location.host}`);
-  ws.onopen = onOpen;
-  ws.onmessage = e => handleMsg(JSON.parse(e.data));
-  ws.onclose = () => {};
+// ── ROOMS ─────────────────────────────────────────────────────────────────────
+const rooms = new Map();
+
+function makeCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return rooms.has(code) ? makeCode() : code;
 }
-function sendMsg(obj) { if(ws&&ws.readyState===1) ws.send(JSON.stringify(obj)); }
 
-function showPage(id) { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-
-function toast(msg,dur=2800) { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),dur); }
-
-// ── ACTIONS ───────────────────────────────────────────────
-function createRoom() {
-  const name=document.getElementById('create-name').value.trim();
-  if(!name){toast('Entre ton prénom !');return;}
-  myName=name; isHost=true;
-  connect(()=>sendMsg({type:'create_room',name}));
-}
-function joinRoom() {
-  const code=document.getElementById('join-code').value.trim().toUpperCase();
-  const name=document.getElementById('join-name').value.trim();
-  if(code.length!==4){toast('Code à 4 lettres !');return;}
-  if(!name){toast('Entre ton prénom !');return;}
-  myName=name;
-  connect(()=>sendMsg({type:'join_room',code,name}));
-}
-function flipCard() {
-  if(flipped)return;
-  flipped=true;
-  document.getElementById('flip-card').classList.add('flipped');
-  setTimeout(()=>document.getElementById('reveal-ok-btn').style.display='block',650);
-}
-function cardSeen() {
-  document.getElementById('reveal-ok-btn').style.display='none';
-  document.getElementById('reveal-waiting').style.display='block';
-  sendMsg({type:'card_seen'});
-}
-function submitClue() {
-  if(clueSubmitted)return;
-  const clue=document.getElementById('clue-input').value.trim();
-  if(!clue){toast('Écris un indice !');return;}
-  clueSubmitted=true;
-  document.getElementById('clue-submit-btn').disabled=true;
-  document.getElementById('clue-input').disabled=true;
-  document.getElementById('clue-waiting-area').style.display='block';
-  sendMsg({type:'submit_clue',clue});
-}
-function castVote(target) {
-  if(hasVoted)return;
-  hasVoted=true;
-  sendMsg({type:'vote',target});
-}
-function leaveGame() { if(ws){ws.close();ws=null;} myName='';myRoom='';isHost=false;myRole=null;myWord=null;hasVoted=false;clueSubmitted=false; showPage('p-home'); }
-
-// ── MESSAGE HANDLER ───────────────────────────────────────
-function handleMsg(msg) {
-  if(msg.type==='error'){toast('⚠️ '+msg.msg);return;}
-  if(msg.type==='blague'){showBlague(msg.text);return;}
-  if(msg.type==='kicked'){toast('Tu as été retiré.');leaveGame();return;}
-  if(msg.type==='created'){isHost=true;myRoom=msg.code;return;}
-  if(msg.type==='joined'){isHost=msg.isHost;myRoom=msg.code;return;}
-
-  if(msg.type==='room_state') { renderLobby(msg); return; }
-
-  if(msg.type==='your_card') {
-    myRole=msg.role; myWord=msg.word;
-    flipped=false;
-    document.getElementById('flip-card').classList.remove('flipped');
-    document.getElementById('reveal-ok-btn').style.display='none';
-    document.getElementById('reveal-waiting').style.display='none';
-    document.getElementById('reveal-seen-count').textContent='';
-    document.getElementById('reveal-theme').textContent=msg.theme;
-    const isCivil=msg.role==='civil';
-    document.getElementById('flip-back-content').innerHTML=`
-      <span class="role-badge ${isCivil?'rb-civil':'rb-undercover'}">${isCivil?'🏙️ Civil':'🕵️ Undercover'}</span>
-      <div class="card-word">${msg.word}</div>
-      <p class="card-sub">${isCivil?"C'est ton mot.<br>Décris-le sans le dire !":"Tu as un mot différent.<br>Bluffe !"}</p>`;
-    showPage('p-reveal');
-    return;
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
+  return a;
+}
 
-  if(msg.type==='waiting_cards') {
-    document.getElementById('reveal-seen-count').textContent=`${msg.seen}/${msg.total} ont vu leur carte`;
-    return;
-  }
+function broadcast(room, msg) {
+  const data = JSON.stringify(msg);
+  room.clients.forEach(ws => { if (ws.readyState === 1) ws.send(data); });
+}
+function send(ws, msg) { if (ws.readyState === 1) ws.send(JSON.stringify(msg)); }
 
-  if(msg.type==='phase' && msg.phase==='clue') {
-    clueSubmitted=false;
-    document.getElementById('clue-round-badge').textContent=`Tour ${msg.clueRound}`;
-    document.getElementById('clue-input').value='';
-    document.getElementById('clue-input').disabled=false;
-    document.getElementById('clue-submit-btn').disabled=false;
-    document.getElementById('clue-waiting-area').style.display='none';
-    document.getElementById('waiting-chips').innerHTML=msg.alivePlayers.map(n=>`<span class="wchip" id="wchip-${n}">${n}</span>`).join('');
-    showPage('p-clue');
-    return;
-  }
+function roomState(room) {
+  return {
+    type: 'room_state',
+    code: room.code,
+    players: room.players.map(p => ({ name: p.name, isHost: p.isHost })),
+    phase: room.phase,
+  };
+}
 
-  if(msg.type==='clue_waiting') {
-    msg.submitted.forEach(n=>{ const el=document.getElementById('wchip-'+n); if(el)el.classList.add('done'); });
-    return;
-  }
+// ── GAME ──────────────────────────────────────────────────────────────────────
+function startGame(room) {
+  const pair = PAIRS[Math.floor(Math.random() * PAIRS.length)];
+  room.theme = pair.theme;
+  room.pair = pair;
+  room.phase = 'reveal';
+  room.round = (room.round || 0) + 1;
+  room.eliminated = [];
+  room.votes = {};
+  room.clues = {};
+  room.clueRound = 0;
+  room.allClues = [];
 
-  if(msg.type==='clue_reveal') {
-    document.getElementById('clue-reveal-title').textContent=`Indices — Tour ${msg.clueRound} 🔍`;
-    document.getElementById('clue-reveal-list').innerHTML=msg.clues.map(c=>`
-      <div class="clue-item">
-        <div class="ci-name">${c.name}</div>
-        <div class="ci-clue">${c.clue}</div>
-      </div>`).join('');
-    // history
-    const prev=msg.allClues.slice(0,-1);
-    if(prev.length>0) {
-      document.getElementById('history-section').style.display='block';
-      document.getElementById('history-list').innerHTML=prev.map(r=>`
-        <div class="history-round">
-          <div class="history-round-title">Tour ${r.round}</div>
-          ${r.clues.map(c=>`<div class="clue-item"><div class="ci-name">${c.name}</div><div class="ci-clue">${c.clue}</div></div>`).join('')}
-        </div>`).join('');
-    } else {
-      document.getElementById('history-section').style.display='none';
+  const shuffled = shuffle(room.players);
+  const ucIdx = Math.floor(Math.random() * shuffled.length);
+  shuffled.forEach((p, i) => {
+    p.role = i === ucIdx ? 'undercover' : 'civil';
+    p.word = i === ucIdx ? pair.b : pair.a;
+    p.alive = true;
+    p.cardSeen = false;
+  });
+
+  room.players.forEach(p => {
+    send(p.ws, { type: 'your_card', role: p.role, word: p.word, theme: pair.theme, round: room.round });
+  });
+  broadcast(room, { type: 'phase', phase: 'reveal', theme: pair.theme, round: room.round });
+}
+
+function startCluePhase(room) {
+  room.phase = 'clue';
+  room.clues = {};
+  room.clueRound++;
+  const alive = room.players.filter(p => p.alive);
+  broadcast(room, { type: 'phase', phase: 'clue', clueRound: room.clueRound, alivePlayers: alive.map(p => p.name) });
+}
+
+function revealClues(room) {
+  const alive = room.players.filter(p => p.alive);
+  const clueList = alive.map(p => ({ name: p.name, clue: room.clues[p.name] || '...' }));
+  room.allClues.push({ round: room.clueRound, clues: clueList });
+  room.phase = 'clue_reveal';
+  broadcast(room, { type: 'clue_reveal', clues: clueList, clueRound: room.clueRound, allClues: room.allClues });
+}
+
+function sendVoteState(room) {
+  const alive = room.players.filter(p => p.alive);
+  broadcast(room, {
+    type: 'vote_state',
+    players: alive.map(p => ({ name: p.name, votes: Object.values(room.votes).filter(v => v === p.name).length })),
+    votes: room.votes,
+    total: alive.length,
+  });
+}
+
+function checkWin(room) {
+  const alive = room.players.filter(p => p.alive);
+  const ucAlive = alive.filter(p => p.role === 'undercover');
+  const civAlive = alive.filter(p => p.role === 'civil');
+  if (ucAlive.length === 0) return 'civils';
+  if (ucAlive.length >= civAlive.length) return 'undercover';
+  return null;
+}
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
+wss.on('connection', ws => {
+  ws.roomCode = null;
+  ws.unoCode = null;
+
+  ws.on('message', raw => {
+    let msg;
+    try { msg = JSON.parse(raw); } catch { return; }
+
+    // CREATE
+    if (msg.type === 'create_room') {
+      const code = makeCode();
+      const room = { code, clients: new Set([ws]), players: [], phase: 'lobby', round: 0, eliminated: [], votes: {}, clues: {}, clueRound: 0, allClues: [] };
+      rooms.set(code, room);
+      ws.roomCode = code;
+      room.players.push({ name: msg.name, ws, isHost: true, role: null, word: null, alive: true, cardSeen: false });
+      send(ws, { type: 'created', code, isHost: true });
+      send(ws, roomState(room));
+      return;
     }
-    document.getElementById('clue-vote-btn').style.display=isHost?'block':'none';
-    document.getElementById('clue-nonhost').style.display=isHost?'none':'block';
-    showPage('p-clue-reveal');
-    return;
-  }
 
-  if(msg.type==='phase' && msg.phase==='vote') { hasVoted=false; return; }
-
-  if(msg.type==='vote_state') {
-    showPage('p-vote');
-    document.getElementById('vote-status').textContent=hasVoted?`${Object.keys(msg.votes).length}/${msg.total} ont voté`:'Appuie pour voter';
-    document.getElementById('vote-list').innerHTML=msg.players.map(p=>{
-      const iMe=p.name===myName;
-      const myVote=msg.votes[myName];
-      const voted=!!myVote;
-      return `<div class="vote-item ${myVote===p.name?'selected':''} ${voted?'voted':''}"
-        onclick="${!voted&&!iMe?`castVote('${p.name}')`:''}" >
-        <span class="vote-name">${p.name}${iMe?' (toi)':''}</span>
-        <span class="vote-count">${p.votes>0?p.votes+' 🗳️':''}</span>
-      </div>`;
-    }).join('');
-    return;
-  }
-
-  if(msg.type==='show_eliminated') {
-    hasVoted=false;
-    const isUC=msg.role==='undercover';
-    document.getElementById('elim-emoji').textContent=isUC?'🕵️':'💀';
-    document.getElementById('elim-name').textContent=msg.name+' est éliminé !';
-    document.getElementById('elim-role').textContent=isUC?"C'était l'Undercover 😱":"C'était un Civil 😅";
-    // Only reveal word if undercover
-    const wordSection=document.getElementById('elim-word-section');
-    if(isUC){
-      wordSection.style.display='block';
-      document.getElementById('elim-word').textContent=msg.word;
-    } else {
-      wordSection.style.display='none';
+    // JOIN
+    if (msg.type === 'join_room') {
+      const room = rooms.get(msg.code.toUpperCase());
+      if (!room) { send(ws, { type: 'error', msg: 'Salle introuvable !' }); return; }
+      if (room.phase !== 'lobby') { send(ws, { type: 'error', msg: 'Partie déjà en cours.' }); return; }
+      if (room.players.length >= 8) { send(ws, { type: 'error', msg: 'Salle pleine !' }); return; }
+      if (room.players.find(p => p.name.toLowerCase() === msg.name.toLowerCase())) { send(ws, { type: 'error', msg: 'Prénom déjà pris !' }); return; }
+      ws.roomCode = msg.code.toUpperCase();
+      room.clients.add(ws);
+      room.players.push({ name: msg.name, ws, isHost: false, role: null, word: null, alive: true, cardSeen: false });
+      send(ws, { type: 'joined', code: room.code, isHost: false });
+      broadcast(room, roomState(room));
+      return;
     }
-    document.getElementById('elim-blague').textContent=msg.blague;
-    document.getElementById('elim-sofar').innerHTML=msg.eliminatedSoFar.map(n=>`<span style="display:inline-block;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.2rem .6rem;margin:.2rem;font-size:.85rem">💀 ${n}</span>`).join('');
-    document.getElementById('elim-continue-btn').style.display=isHost?'block':'none';
-    document.getElementById('elim-wait').style.display=isHost?'none':'block';
-    showPage('p-eliminated');
-    return;
-  }
 
-  if(msg.type==='eliminated'){return;} // legacy, ignore
+    // UNO
+    if (msg.type === 'uno_create') {
+      const code = 'U' + makeCode().slice(1);
+      const room = createUnoRoom(code, ws, msg.name);
+      ws.unoCode = code;
+      unoSend(ws, { type: 'uno_created', code, isHost: true });
+      unoSend(ws, { type: 'uno_lobby', code, players: room.players.map(p => p.name), isHost: true });
+      return;
+    }
+    if (msg.type === 'uno_join') {
+      const room = unoRooms().get(msg.code.toUpperCase());
+      if (!room) { unoSend(ws, { type: 'error', msg: 'Salle UNO introuvable !' }); return; }
+      if (room.phase !== 'lobby') { unoSend(ws, { type: 'error', msg: 'Partie déjà en cours.' }); return; }
+      if (room.players.find(p => p.name.toLowerCase() === msg.name.toLowerCase())) { unoSend(ws, { type: 'error', msg: 'Prénom déjà pris !' }); return; }
+      joinUnoRoom(room, ws, msg.name);
+      ws.unoCode = msg.code.toUpperCase();
+      unoSend(ws, { type: 'uno_joined', code: room.code, isHost: false });
+      broadcastUnoAll(room, { type: 'uno_lobby', code: room.code, players: room.players.map(p => p.name), isHost: false });
+      return;
+    }
+    if (msg.type === 'uno_start') {
+      const room = ws.unoCode ? unoRooms().get(ws.unoCode) : null;
+      if (!room) return;
+      const me = room.players.find(p => p.ws === ws);
+      if (!me || !me.isHost) return;
+      if (room.players.length < 2) { unoSend(ws, { type: 'error', msg: 'Il faut au moins 2 joueurs !' }); return; }
+      startUnoGame(room);
+      return;
+    }
+    if (msg.type === 'uno_play') {
+      const room = ws.unoCode ? unoRooms().get(ws.unoCode) : null;
+      if (!room) return;
+      handleUnoPlay(room, ws, msg.cardId, msg.chosenColor);
+      return;
+    }
+    if (msg.type === 'uno_draw') {
+      const room = ws.unoCode ? unoRooms().get(ws.unoCode) : null;
+      if (!room) return;
+      handleUnoDraw(room, ws);
+      return;
+    }
+    if (msg.type === 'uno_again') {
+      const room = ws.unoCode ? unoRooms().get(ws.unoCode) : null;
+      if (!room) return;
+      const me = room.players.find(p => p.ws === ws);
+      if (!me || !me.isHost) return;
+      startUnoGame(room);
+      return;
+    }
 
-  if(msg.type==='game_over') {
-    hasVoted=false;
-    if(msg.winner==='civils'){document.getElementById('result-emoji').textContent='🏙️';document.getElementById('result-title').textContent='Les Civils gagnent !';document.getElementById('result-sub').textContent="L'imposteur a été démasqué";}
-    else{document.getElementById('result-emoji').textContent='🕵️';document.getElementById('result-title').textContent='Undercover gagne !';document.getElementById('result-sub').textContent="L'imposteur a survécu !";}
-    document.getElementById('result-list').innerHTML=msg.players.map(p=>`
-      <div class="reveal-item">
-        <div><div class="ri-name">${p.name}</div><div class="ri-role">${p.role==='civil'?'🏙️ Civil':'🕵️ Undercover'}</div></div>
-        <div class="ri-word">${p.word}</div>
-      </div>`).join('');
-    document.getElementById('result-replay-btn').style.display=isHost?'block':'none';
-    showPage('p-result');
-    return;
-  }
+    // UNDERCOVER
+    const room = ws.roomCode ? rooms.get(ws.roomCode) : null;
+    if (!room) return;
+    const me = room.players.find(p => p.ws === ws);
+    if (!me) return;
 
-  if(msg.type==='phase'&&msg.phase==='lobby') { showPage('p-lobby'); return; }
-}
+    if (msg.type === 'start_game') {
+      if (!me.isHost) return;
+      if (room.players.length < 3) { send(ws, { type: 'error', msg: 'Il faut au moins 3 joueurs !' }); return; }
+      startGame(room);
+      return;
+    }
 
-// ── RENDER LOBBY ──────────────────────────────────────────
-function renderLobby(msg) {
-  const players=msg.players||[];
-  document.getElementById('lobby-code').textContent=msg.code||myRoom;
-  document.getElementById('lobby-count').textContent=`${players.length} joueur${players.length>1?'s':''} connecté${players.length>1?'s':''}`;
-  document.getElementById('lobby-players').innerHTML=players.map(p=>`
-    <div class="player-row">
-      <span class="pname">${p.name}${p.isHost?' 👑':''}</span>
-      <span class="ptag">${p.name===myName?'← toi':'✓'}</span>
-      ${isHost&&!p.isHost?`<button class="kick-btn" onclick="sendMsg({type:'kick',name:'${p.name}'})">✕</button>`:''}
-    </div>`).join('');
-  const startBtn=document.getElementById('lobby-start-btn');
-  const waitMsg=document.getElementById('lobby-wait');
-  if(isHost){
-    startBtn.style.display='block';
-    startBtn.disabled=players.length<3;
-    startBtn.textContent=players.length>=3?`Lancer (${players.length} joueurs) 🔥`:`Lancer (${players.length}/3 min)`;
-    waitMsg.style.display=players.length<3?'block':'none';
-    document.getElementById('lobby-hint').style.display='block';
-  } else {
-    startBtn.style.display='none';
-    waitMsg.innerHTML=`En attente de l'hôte<span class="dots"></span>`;
-    waitMsg.style.display='block';
-    document.getElementById('lobby-hint').style.display='none';
-  }
-  showPage('p-lobby');
-}
-</script>
-</body>
-</html>
+    if (msg.type === 'card_seen') {
+      me.cardSeen = true;
+      const alive = room.players.filter(p => p.alive);
+      if (alive.every(p => p.cardSeen)) {
+        alive.forEach(p => p.cardSeen = false);
+        startCluePhase(room);
+      } else {
+        broadcast(room, { type: 'waiting_cards', seen: alive.filter(p => p.cardSeen).length, total: alive.length });
+      }
+      return;
+    }
+
+    if (msg.type === 'submit_clue') {
+      if (room.phase !== 'clue' || !me.alive) return;
+      const clue = (msg.clue || '').trim().slice(0, 40);
+      if (!clue) return;
+      room.clues[me.name] = clue;
+      // tell everyone who has submitted (without showing the clue)
+      const alive = room.players.filter(p => p.alive);
+      broadcast(room, { type: 'clue_waiting', submitted: Object.keys(room.clues), total: alive.length });
+      if (Object.keys(room.clues).length >= alive.length) revealClues(room);
+      return;
+    }
+
+    if (msg.type === 'open_vote') {
+      if (!me.isHost) return;
+      room.phase = 'vote';
+      room.votes = {};
+      broadcast(room, { type: 'phase', phase: 'vote' });
+      sendVoteState(room);
+      return;
+    }
+
+    if (msg.type === 'vote') {
+      if (room.phase !== 'vote' || !me.alive) return;
+      if (msg.target === me.name) return;
+      room.votes[me.name] = msg.target;
+      sendVoteState(room);
+      const alive = room.players.filter(p => p.alive);
+      if (Object.keys(room.votes).length >= alive.length) {
+        const counts = {};
+        Object.values(room.votes).forEach(v => counts[v] = (counts[v] || 0) + 1);
+        const eliminated = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+        const elim = room.players.find(p => p.name === eliminated);
+        if (elim) elim.alive = false;
+        room.eliminated.push(eliminated);
+        const win = checkWin(room);
+        if (win) {
+          room.phase = 'result';
+          broadcast(room, { type: 'game_over', winner: win, players: room.players.map(p => ({ name: p.name, role: p.role, word: p.word, alive: p.alive })), eliminated });
+        } else {
+          room.votes = {};
+          room.phase = 'eliminated_screen';
+          broadcast(room, {
+            type: 'show_eliminated',
+            name: eliminated,
+            role: elim ? elim.role : '?',
+            word: elim ? elim.word : '?',
+            blague: randBlague(),
+            eliminatedSoFar: room.eliminated,
+          });
+        }
+      }
+      return;
+    }
+
+    if (msg.type === 'continue_after_elim') {
+      if (!me.isHost) return;
+      startCluePhase(room);
+      return;
+    }
+
+    if (msg.type === 'play_again') {
+      if (!me.isHost) return;
+      room.phase = 'lobby';
+      room.votes = {}; room.clues = {}; room.eliminated = []; room.allClues = []; room.clueRound = 0;
+      room.players.forEach(p => { p.role = null; p.word = null; p.alive = true; p.cardSeen = false; });
+      broadcast(room, { type: 'blague', text: randBlague() });
+      broadcast(room, { type: 'phase', phase: 'lobby' });
+      broadcast(room, roomState(room));
+      return;
+    }
+
+    if (msg.type === 'kick') {
+      if (!me.isHost || room.phase !== 'lobby') return;
+      const idx = room.players.findIndex(p => p.name === msg.name);
+      if (idx > -1 && !room.players[idx].isHost) {
+        const kicked = room.players[idx];
+        send(kicked.ws, { type: 'kicked' });
+        room.clients.delete(kicked.ws);
+        room.players.splice(idx, 1);
+        broadcast(room, roomState(room));
+      }
+      return;
+    }
+  });
+
+  ws.on('close', () => {
+    if (ws.roomCode) {
+      const room = rooms.get(ws.roomCode);
+      if (room) {
+        room.clients.delete(ws);
+        const idx = room.players.findIndex(p => p.ws === ws);
+        if (idx > -1) {
+          const wasHost = room.players[idx].isHost;
+          room.players.splice(idx, 1);
+          if (room.players.length === 0) { rooms.delete(ws.roomCode); }
+          else { if (wasHost) room.players[0].isHost = true; broadcast(room, roomState(room)); }
+        }
+      }
+    }
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`🔥 Boubistou Games on port ${PORT}`));
