@@ -1,8 +1,17 @@
 // ── UNO GAME LOGIC ───────────────────────────────────────────────────────────
-
+ 
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+ 
 const UNO_COLORS = ['rouge', 'vert', 'bleu', 'jaune'];
 const UNO_VALUES = ['0','1','2','3','4','5','6','7','8','9','passe','inverse','+2'];
-
+ 
 function buildUnoDeck() {
   const deck = [];
   // 2x chaque carte colorée sauf 0
@@ -21,10 +30,10 @@ function buildUnoDeck() {
   // 🍲 Attaque Semoule — seulement 2 exemplaires
   deck.push({ color: 'semoule', value: 'semoule', id: 'semoule-1', special: true });
   deck.push({ color: 'semoule', value: 'semoule', id: 'semoule-2', special: true });
-
+ 
   return shuffle(deck);
 }
-
+ 
 function unoCanPlay(card, topCard, currentColor) {
   if (card.special) return true; // semoule toujours jouable
   if (card.color === 'noir') return true;
@@ -32,10 +41,10 @@ function unoCanPlay(card, topCard, currentColor) {
   if (card.value === topCard.value) return true;
   return false;
 }
-
+ 
 function unoRooms() { return _unoRooms; }
 const _unoRooms = new Map();
-
+ 
 function createUnoRoom(code, hostWs, hostName) {
   const room = {
     code,
@@ -55,13 +64,13 @@ function createUnoRoom(code, hostWs, hostName) {
   room.players.push(player);
   return room;
 }
-
+ 
 function joinUnoRoom(room, ws, name) {
   room.clients.add(ws);
   const player = { name, ws, isHost: false, hand: [] };
   room.players.push(player);
 }
-
+ 
 function startUnoGame(room) {
   room.deck = buildUnoDeck();
   room.phase = 'playing';
@@ -69,22 +78,22 @@ function startUnoGame(room) {
   room.currentIdx = 0;
   room.drawStack = 0;
   room.pendingColor = false;
-
+ 
   // Deal 7 cards each
   room.players.forEach(p => {
     p.hand = [];
     for (let i = 0; i < 7; i++) p.hand.push(room.deck.pop());
   });
-
+ 
   // First card (no special)
   let first;
   do { first = room.deck.pop(); } while (first.color === 'noir' || first.special);
   room.pile = [first];
   room.currentColor = first.color;
-
+ 
   broadcastUnoState(room);
 }
-
+ 
 function broadcastUnoState(room) {
   const top = room.pile[room.pile.length - 1];
   room.players.forEach((p, idx) => {
@@ -103,30 +112,30 @@ function broadcastUnoState(room) {
     });
   });
 }
-
+ 
 function unoNextTurn(room, skip = 0) {
   const n = room.players.length;
   room.currentIdx = ((room.currentIdx + room.direction * (1 + skip)) % n + n) % n;
 }
-
+ 
 function handleUnoPlay(room, playerWs, cardId, chosenColor) {
   const player = room.players.find(p => p.ws === playerWs);
   if (!player) return;
   const idx = room.players.indexOf(player);
   if (idx !== room.currentIdx) return;
-
+ 
   const cardIdx = player.hand.findIndex(c => c.id === cardId);
   if (cardIdx === -1) return;
   const card = player.hand[cardIdx];
   const top = room.pile[room.pile.length - 1];
-
+ 
   // If drawStack active, must play +2/+4/semoule or draw
   if (room.drawStack > 0 && card.value !== '+2' && card.value !== '+4' && !card.special) return;
   if (!unoCanPlay(card, top, room.currentColor)) return;
-
+ 
   player.hand.splice(cardIdx, 1);
   room.pile.push(card);
-
+ 
   // Check win
   if (player.hand.length === 0) {
     room.phase = 'gameover';
@@ -134,7 +143,7 @@ function handleUnoPlay(room, playerWs, cardId, chosenColor) {
     broadcastUnoAll(room, { type: 'uno_winner', name: player.name });
     return;
   }
-
+ 
   // Apply card effect
   if (card.special) {
     // Attaque Semoule = +2 pour le suivant
@@ -172,19 +181,19 @@ function handleUnoPlay(room, playerWs, cardId, chosenColor) {
     room.currentColor = card.color;
     unoNextTurn(room);
   }
-
+ 
   broadcastUnoState(room);
 }
-
+ 
 function handleUnoDraw(room, playerWs) {
   const player = room.players.find(p => p.ws === playerWs);
   if (!player) return;
   const idx = room.players.indexOf(player);
   if (idx !== room.currentIdx) return;
-
+ 
   const count = room.drawStack > 0 ? room.drawStack : 1;
   room.drawStack = 0;
-
+ 
   for (let i = 0; i < count; i++) {
     if (room.deck.length === 0) {
       // reshuffle pile
@@ -194,15 +203,16 @@ function handleUnoDraw(room, playerWs) {
     }
     if (room.deck.length > 0) player.hand.push(room.deck.pop());
   }
-
+ 
   unoNextTurn(room);
   broadcastUnoState(room);
 }
-
+ 
 function unoSend(ws, msg) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg)); }
 function broadcastUnoAll(room, msg) {
   const data = JSON.stringify(msg);
   room.clients.forEach(ws => { if (ws.readyState === 1) ws.send(data); });
 }
-
+ 
 module.exports = { createUnoRoom, joinUnoRoom, startUnoGame, handleUnoPlay, handleUnoDraw, unoRooms, broadcastUnoAll, unoSend };
+ 
