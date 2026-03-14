@@ -14,22 +14,22 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html,body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: 'Crimson Pro', serif; overflow-x: hidden; }
 body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh; background:radial-gradient(ellipse 70% 50% at 50% 100%, rgba(255,107,26,.14) 0%, transparent 80%); pointer-events:none; z-index:0; }
- 
+
 .page { display:none; min-height:100vh; flex-direction:column; align-items:center; justify-content:center; padding:1.8rem 1.25rem; position:relative; z-index:1; }
 .page.active { display:flex; }
- 
+
 /* typography */
 .fire-logo { font-family:'Playfair Display',serif; font-size:clamp(3rem,14vw,5rem); font-weight:900; line-height:.9; text-align:center; }
 .fire-logo em { font-style:italic; background:linear-gradient(160deg,#ffb347 0%,#ff6b1a 45%,#ee0979 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .tagline { font-style:italic; color:var(--muted); font-size:1rem; text-align:center; margin-top:.4rem; }
 .section-label { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--ember); text-align:center; margin-bottom:1.2rem; }
 .hint { color:var(--muted); font-size:.88rem; font-style:italic; text-align:center; line-height:1.5; }
- 
+
 /* inputs */
 .inp { width:100%; max-width:340px; background:var(--bg2); border:1px solid var(--border); border-radius:11px; padding:.75rem 1rem; color:var(--text); font-family:'Crimson Pro',serif; font-size:1.05rem; outline:none; transition:border-color .2s; margin-bottom:.8rem; }
 .inp:focus { border-color:var(--fire); }
 .inp::placeholder { color:var(--muted); }
- 
+
 /* buttons */
 .btn { width:100%; max-width:340px; padding:.9rem; border-radius:14px; border:none; cursor:pointer; font-family:'Playfair Display',serif; font-size:1.05rem; font-weight:700; letter-spacing:.02em; transition:all .15s; }
 .btn-fire { background:linear-gradient(135deg,#ff6b1a,#ee0979); color:#fff; box-shadow:0 4px 28px rgba(255,107,26,.3); }
@@ -38,19 +38,19 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
 .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); margin-top:.5rem; }
 .btn-outline:active { background:var(--smoke); }
 .btn-ember { background:rgba(255,179,71,.12); border:1px solid rgba(255,179,71,.3); color:var(--ember); margin-top:.5rem; }
- 
+
 /* code display */
 .code-big { font-family:'Playfair Display',serif; font-size:3.2rem; font-weight:900; letter-spacing:.18em; color:var(--ember); text-align:center; background:var(--bg2); border:1.5px solid var(--border); border-radius:14px; padding:1rem 1.5rem; margin-bottom:1rem; width:100%; max-width:340px; }
 .code-input { width:100%; max-width:340px; background:var(--bg2); border:1.5px solid var(--border); border-radius:11px; padding:.85rem 1rem; color:var(--ember); font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; letter-spacing:.2em; text-align:center; outline:none; text-transform:uppercase; margin-bottom:.8rem; }
 .code-input:focus { border-color:var(--fire); }
- 
+
 /* player list */
 .player-list { width:100%; max-width:340px; display:flex; flex-direction:column; gap:.5rem; margin-bottom:1rem; }
 .player-row { display:flex; align-items:center; justify-content:space-between; background:var(--bg2); border:1px solid var(--border); border-radius:11px; padding:.65rem 1rem; }
 .player-row .pname { font-size:1rem; font-weight:600; }
 .player-row .ptag { font-size:.72rem; color:var(--muted); font-style:italic; }
 .player-row .kick-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; }
- 
+
 /* flip card */
 .flip-wrap { width:240px; height:320px; perspective:1200px; cursor:pointer; margin:1.5rem 0; }
 .flip-inner { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .6s cubic-bezier(.4,0,.2,1); }
@@ -65,7 +65,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
 .rb-undercover { background:rgba(224,92,92,.12); color:var(--red); border:1px solid rgba(224,92,92,.3); }
 .card-word { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; margin:.3rem 0 .6rem; color:var(--ember); }
 .card-sub { color:var(--muted); font-size:.85rem; font-style:italic; line-height:1.5; }
- 
+
 /* clue phase */
 .clue-box { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1.4rem; width:100%; max-width:340px; margin-bottom:1rem; text-align:center; }
 .clue-round-badge { display:inline-block; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; padding:.25rem .7rem; border-radius:8px; background:rgba(255,179,71,.12); color:var(--ember); border:1px solid rgba(255,179,71,.3); margin-bottom:.8rem; }
@@ -75,19 +75,19 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
 .waiting-chips { display:flex; flex-wrap:wrap; gap:.4rem; justify-content:center; margin-top:.8rem; }
 .wchip { font-size:.75rem; padding:.25rem .6rem; border-radius:8px; background:var(--bg2); border:1px solid var(--border); color:var(--muted); }
 .wchip.done { border-color:var(--green); color:var(--green); background:rgba(126,203,143,.08); }
- 
+
 /* clue reveal */
 .clue-reveal-list { width:100%; max-width:340px; display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.2rem; }
 .clue-item { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:.9rem 1.1rem; display:flex; justify-content:space-between; align-items:center; animation:popIn .3s ease; }
 @keyframes popIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 .clue-item .ci-name { font-size:.8rem; color:var(--muted); font-style:italic; }
 .clue-item .ci-clue { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--ember); }
- 
+
 /* history */
 .history-section { width:100%; max-width:340px; margin-bottom:1rem; }
 .history-round { margin-bottom:.8rem; }
 .history-round-title { font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
- 
+
 /* vote */
 .vote-list { width:100%; max-width:340px; display:flex; flex-direction:column; gap:.6rem; margin-bottom:1rem; }
 .vote-item { display:flex; align-items:center; justify-content:space-between; background:var(--bg2); border:1.5px solid var(--border); border-radius:13px; padding:.7rem 1rem; transition:all .15s; cursor:pointer; }
@@ -96,7 +96,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
 .vote-item.voted { opacity:.5; cursor:default; }
 .vote-name { font-size:1rem; font-weight:600; }
 .vote-count { font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--ember); }
- 
+
 /* result */
 .result-emoji { font-size:5rem; margin-bottom:1rem; animation:pop .5s cubic-bezier(.175,.885,.32,1.275); }
 @keyframes pop { 0%{transform:scale(0)} 100%{transform:scale(1)} }
@@ -107,12 +107,12 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
 .ri-name { font-weight:600; font-size:.95rem; }
 .ri-role { font-size:.7rem; font-style:italic; color:var(--muted); }
 .ri-word { font-family:'Playfair Display',serif; font-size:.9rem; color:var(--ember); }
- 
+
 /* phase banner */
 .phase-banner { background:var(--smoke); border:1px solid var(--border); border-radius:12px; padding:.9rem 1.2rem; width:100%; max-width:340px; text-align:center; margin-bottom:1rem; }
 .phase-banner strong { color:var(--ember); font-family:'Playfair Display',serif; font-size:1.1rem; }
 .phase-banner p { color:var(--muted); font-size:.88rem; font-style:italic; margin-top:.2rem; }
- 
+
 /* blague */
 .blague-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500; display:flex; align-items:center; justify-content:center; padding:1.5rem; opacity:0; transition:opacity .3s; pointer-events:none; }
 .blague-overlay.show { opacity:1; pointer-events:all; }
@@ -121,7 +121,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
 .blague-title { font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--ember); margin-bottom:1rem; }
 .blague-text { font-size:1.05rem; line-height:1.6; color:var(--text); font-style:italic; margin-bottom:1.5rem; }
 .blague-btn { background:linear-gradient(135deg,#ff6b1a,#ee0979); color:#fff; border:none; border-radius:12px; padding:.75rem 2rem; font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; cursor:pointer; }
- 
+
 /* toast */
 .toast { position:fixed; top:1.2rem; left:50%; transform:translateX(-50%); background:var(--smoke); border:1px solid var(--border); border-radius:10px; padding:.65rem 1.2rem; font-size:.88rem; color:var(--text); z-index:999; opacity:0; transition:opacity .2s; pointer-events:none; white-space:nowrap; }
 .toast.show { opacity:1; }
@@ -132,9 +132,9 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
 </style>
 </head>
 <body>
- 
+
 <div class="toast" id="toast"></div>
- 
+
 <!-- BLAGUE -->
 <div class="blague-overlay" id="blague-overlay" onclick="closeBlague()">
   <div class="blague-box" onclick="event.stopPropagation()">
@@ -143,7 +143,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
     <button class="blague-btn" onclick="closeBlague()">😂 Ok ok</button>
   </div>
 </div>
- 
+
 <!-- HOME -->
 <div class="page active" id="p-home">
   <div class="fire-logo"><em>Boubistou</em><br>Games</div>
@@ -154,7 +154,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
   <button class="btn btn-ember full-w" style="margin-top:1.2rem" onclick="showRandomBlague()">💡 Blague du groupe</button>
   <button class="btn btn-outline full-w" style="margin-top:.5rem;border-color:#2980b9;color:#7aa5c8" onclick="window.location.href='/uno.html'">🃏 Jouer à l'UNO</button>
 </div>
- 
+
 <!-- CREATE -->
 <div class="page" id="p-create">
   <div class="section-label">Créer une salle</div>
@@ -162,7 +162,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
   <button class="btn btn-fire" onclick="createRoom()">Créer →</button>
   <button class="btn btn-outline full-w" onclick="showPage('p-home')">← Retour</button>
 </div>
- 
+
 <!-- JOIN -->
 <div class="page" id="p-join">
   <div class="section-label">Rejoindre</div>
@@ -171,7 +171,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
   <button class="btn btn-fire" onclick="joinRoom()">Rejoindre →</button>
   <button class="btn btn-outline full-w" onclick="showPage('p-home')">← Retour</button>
 </div>
- 
+
 <!-- LOBBY -->
 <div class="page" id="p-lobby">
   <div class="section-label">Salle</div>
@@ -182,7 +182,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
   <button class="btn btn-fire" id="lobby-start-btn" onclick="sendMsg({type:'start_game'})" disabled>Lancer</button>
   <p class="hint gap" id="lobby-wait"><span class="dots">En attente</span></p>
 </div>
- 
+
 <!-- REVEAL (flip card) -->
 <div class="page" id="p-reveal">
   <p class="section-label" id="reveal-theme">Thème</p>
@@ -203,7 +203,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
   </div>
   <button class="btn btn-fire full-w" id="reveal-ok-btn" onclick="cardSeen()" style="display:none">✓ J'ai mémorisé mon mot</button>
 </div>
- 
+
 <!-- CLUE (écriture des indices) -->
 <div class="page" id="p-clue">
   <div class="clue-box">
@@ -217,7 +217,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
     <div class="waiting-chips" id="waiting-chips"></div>
   </div>
 </div>
- 
+
 <!-- CLUE REVEAL (tous les indices visibles) -->
 <div class="page" id="p-clue-reveal">
   <div class="section-label" id="clue-reveal-title">Les indices 🔍</div>
@@ -229,7 +229,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
   <button class="btn btn-fire full-w" id="clue-vote-btn" onclick="sendMsg({type:'open_vote'})" style="display:none">🗳️ Passer au vote</button>
   <p class="hint gap" id="clue-nonhost">L'hôte va lancer le vote...</p>
 </div>
- 
+
 <!-- VOTE -->
 <div class="page" id="p-vote">
   <div class="phase-banner">
@@ -239,7 +239,27 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
   <p class="hint" style="margin-bottom:1rem" id="vote-status">Appuie sur un joueur</p>
   <div class="vote-list" id="vote-list"></div>
 </div>
- 
+
+<!-- ELIMINATED SCREEN -->
+<div class="page" id="p-eliminated">
+  <div class="result-emoji" id="elim-emoji">💀</div>
+  <div class="result-title" id="elim-name"></div>
+  <div class="result-sub" id="elim-role"></div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.4rem;width:100%;max-width:340px;text-align:center;margin-bottom:1rem">
+    <p style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem">Son mot était</p>
+    <p style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--ember)" id="elim-word"></p>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.4rem;width:100%;max-width:340px;text-align:center;margin-bottom:1.5rem">
+    <p style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Éliminés jusqu'ici</p>
+    <div id="elim-sofar"></div>
+  </div>
+  <div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:14px;padding:1rem 1.2rem;width:100%;max-width:340px;text-align:center;margin-bottom:1.5rem">
+    <p style="font-size:.85rem;font-style:italic;color:var(--text)" id="elim-blague"></p>
+  </div>
+  <button class="btn btn-fire full-w" id="elim-continue-btn" onclick="sendMsg({type:'continue_after_elim'})" style="display:none">Continuer →</button>
+  <p class="hint" id="elim-wait">L'hôte va continuer<span class="dots"></span></p>
+</div>
+
 <!-- RESULT -->
 <div class="page" id="p-result">
   <div class="result-emoji" id="result-emoji">🏆</div>
@@ -249,7 +269,7 @@ body::after { content:''; position:fixed; bottom:0; left:0; right:0; height:45vh
   <button class="btn btn-fire full-w" id="result-replay-btn" onclick="sendMsg({type:'play_again'})" style="display:none">🔥 Rejouer</button>
   <button class="btn btn-outline full-w" onclick="leaveGame()">← Quitter</button>
 </div>
- 
+
 <script>
 // ── BLAGUES ───────────────────────────────────────────────
 const BLAGUES_CLIENT = [
@@ -277,10 +297,10 @@ const BLAGUES_CLIENT = [
 function showBlague(text) { document.getElementById('blague-text').textContent=text; document.getElementById('blague-overlay').classList.add('show'); }
 function showRandomBlague() { showBlague(BLAGUES_CLIENT[Math.floor(Math.random()*BLAGUES_CLIENT.length)]); }
 function closeBlague() { document.getElementById('blague-overlay').classList.remove('show'); }
- 
+
 // ── STATE ─────────────────────────────────────────────────
 let ws=null, myName='', myRoom='', isHost=false, myRole=null, myWord=null, flipped=false, hasVoted=false, clueSubmitted=false;
- 
+
 // ── WS ────────────────────────────────────────────────────
 function connect(onOpen) {
   const proto = location.protocol==='https:'?'wss':'ws';
@@ -290,11 +310,11 @@ function connect(onOpen) {
   ws.onclose = () => {};
 }
 function sendMsg(obj) { if(ws&&ws.readyState===1) ws.send(JSON.stringify(obj)); }
- 
+
 function showPage(id) { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
- 
+
 function toast(msg,dur=2800) { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),dur); }
- 
+
 // ── ACTIONS ───────────────────────────────────────────────
 function createRoom() {
   const name=document.getElementById('create-name').value.trim();
@@ -337,7 +357,7 @@ function castVote(target) {
   sendMsg({type:'vote',target});
 }
 function leaveGame() { if(ws){ws.close();ws=null;} myName='';myRoom='';isHost=false;myRole=null;myWord=null;hasVoted=false;clueSubmitted=false; showPage('p-home'); }
- 
+
 // ── MESSAGE HANDLER ───────────────────────────────────────
 function handleMsg(msg) {
   if(msg.type==='error'){toast('⚠️ '+msg.msg);return;}
@@ -345,9 +365,9 @@ function handleMsg(msg) {
   if(msg.type==='kicked'){toast('Tu as été retiré.');leaveGame();return;}
   if(msg.type==='created'){isHost=true;myRoom=msg.code;return;}
   if(msg.type==='joined'){isHost=msg.isHost;myRoom=msg.code;return;}
- 
+
   if(msg.type==='room_state') { renderLobby(msg); return; }
- 
+
   if(msg.type==='your_card') {
     myRole=msg.role; myWord=msg.word;
     flipped=false;
@@ -364,12 +384,12 @@ function handleMsg(msg) {
     showPage('p-reveal');
     return;
   }
- 
+
   if(msg.type==='waiting_cards') {
     document.getElementById('reveal-seen-count').textContent=`${msg.seen}/${msg.total} ont vu leur carte`;
     return;
   }
- 
+
   if(msg.type==='phase' && msg.phase==='clue') {
     clueSubmitted=false;
     document.getElementById('clue-round-badge').textContent=`Tour ${msg.clueRound}`;
@@ -381,12 +401,12 @@ function handleMsg(msg) {
     showPage('p-clue');
     return;
   }
- 
+
   if(msg.type==='clue_waiting') {
     msg.submitted.forEach(n=>{ const el=document.getElementById('wchip-'+n); if(el)el.classList.add('done'); });
     return;
   }
- 
+
   if(msg.type==='clue_reveal') {
     document.getElementById('clue-reveal-title').textContent=`Indices — Tour ${msg.clueRound} 🔍`;
     document.getElementById('clue-reveal-list').innerHTML=msg.clues.map(c=>`
@@ -411,9 +431,9 @@ function handleMsg(msg) {
     showPage('p-clue-reveal');
     return;
   }
- 
+
   if(msg.type==='phase' && msg.phase==='vote') { hasVoted=false; return; }
- 
+
   if(msg.type==='vote_state') {
     showPage('p-vote');
     document.getElementById('vote-status').textContent=hasVoted?`${Object.keys(msg.votes).length}/${msg.total} ont voté`:'Appuie pour voter';
@@ -429,12 +449,24 @@ function handleMsg(msg) {
     }).join('');
     return;
   }
- 
-  if(msg.type==='eliminated') {
-    toast(`🔥 ${msg.name} éliminé${msg.role==='undercover'?" — c'était l'Undercover !":''}`,3500);
+
+  if(msg.type==='show_eliminated') {
+    hasVoted=false;
+    const isUC=msg.role==='undercover';
+    document.getElementById('elim-emoji').textContent=isUC?'🕵️':'💀';
+    document.getElementById('elim-name').textContent=msg.name+' est éliminé !';
+    document.getElementById('elim-role').textContent=isUC?"C'était l'Undercover 😱":"C'était un Civil 😅";
+    document.getElementById('elim-word').textContent=msg.word;
+    document.getElementById('elim-blague').textContent=msg.blague;
+    document.getElementById('elim-sofar').innerHTML=msg.eliminatedSoFar.map(n=>`<span style="display:inline-block;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.2rem .6rem;margin:.2rem;font-size:.85rem">💀 ${n}</span>`).join('');
+    document.getElementById('elim-continue-btn').style.display=isHost?'block':'none';
+    document.getElementById('elim-wait').style.display=isHost?'none':'block';
+    showPage('p-eliminated');
     return;
   }
- 
+
+  if(msg.type==='eliminated'){return;} // legacy, ignore
+
   if(msg.type==='game_over') {
     hasVoted=false;
     if(msg.winner==='civils'){document.getElementById('result-emoji').textContent='🏙️';document.getElementById('result-title').textContent='Les Civils gagnent !';document.getElementById('result-sub').textContent="L'imposteur a été démasqué";}
@@ -448,10 +480,10 @@ function handleMsg(msg) {
     showPage('p-result');
     return;
   }
- 
+
   if(msg.type==='phase'&&msg.phase==='lobby') { showPage('p-lobby'); return; }
 }
- 
+
 // ── RENDER LOBBY ──────────────────────────────────────────
 function renderLobby(msg) {
   const players=msg.players||[];
