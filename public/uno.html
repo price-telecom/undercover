@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>UNO 🃏 Boubistou Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #1a1a2e;
+  --bg2: #16213e;
+  --card-bg: #0f3460;
+  --border: #1a4a8a;
+  --text: #e8f4fd;
+  --muted: #7aa5c8;
+  --rouge: #e74c3c;
+  --vert: #27ae60;
+  --bleu: #2980b9;
+  --jaune: #f1c40f;
+  --noir: #2c3e50;
+  --semoule: #8e44ad;
+  --rouge-dark: #c0392b;
+  --vert-dark: #1e8449;
+  --bleu-dark: #1a6690;
+  --jaune-dark: #d4ac0d;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html,body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: 'Nunito Sans', sans-serif; overflow-x: hidden; }
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(41,128,185,.15) 0%, transparent 70%);
+}
+
+.page { display: none; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1rem; position: relative; z-index: 1; }
+.page.active { display: flex; }
+
+/* ── HOME ── */
+.logo { font-family: 'Nunito', sans-serif; font-size: clamp(3rem,14vw,5rem); font-weight: 900; text-align: center; line-height: .9; }
+.logo span { display: inline-block; }
+.logo .u { color: var(--rouge); transform: rotate(-8deg); display: inline-block; }
+.logo .n { color: var(--vert); transform: rotate(4deg); display: inline-block; }
+.logo .o { color: var(--jaune); transform: rotate(-4deg); display: inline-block; }
+.sub { font-family: 'Nunito', sans-serif; font-weight: 800; color: var(--semoule); font-size: .9rem; letter-spacing: .1em; text-align: center; margin-top: .4rem; margin-bottom: 2.5rem; }
+
+/* ── BUTTONS ── */
+.btn { width: 100%; max-width: 320px; padding: .9rem; border-radius: 14px; border: none; cursor: pointer; font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 800; transition: all .15s; }
+.btn-primary { background: linear-gradient(135deg, var(--bleu), #1abc9c); color: #fff; box-shadow: 0 4px 20px rgba(41,128,185,.35); }
+.btn-primary:active { transform: scale(.97); }
+.btn-primary:disabled { opacity: .4; cursor: default; transform: none; }
+.btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text); margin-top: .6rem; }
+.btn-outline:active { background: var(--bg2); }
+
+/* ── INPUT ── */
+.inp { width: 100%; max-width: 320px; background: var(--bg2); border: 2px solid var(--border); border-radius: 11px; padding: .75rem 1rem; color: var(--text); font-family: 'Nunito Sans', sans-serif; font-size: 1rem; outline: none; transition: border-color .2s; margin-bottom: .8rem; }
+.inp:focus { border-color: var(--bleu); }
+.inp::placeholder { color: var(--muted); }
+.section-title { font-family: 'Nunito', sans-serif; font-size: 1.4rem; font-weight: 900; text-align: center; margin-bottom: 1.2rem; }
+.code-big { font-family: 'Nunito', sans-serif; font-size: 3rem; font-weight: 900; letter-spacing: .2em; color: var(--jaune); text-align: center; background: var(--bg2); border: 2px solid var(--border); border-radius: 14px; padding: .8rem 1.5rem; margin-bottom: 1rem; width: 100%; max-width: 320px; }
+.code-inp { width: 100%; max-width: 320px; background: var(--bg2); border: 2px solid var(--border); border-radius: 11px; padding: .75rem 1rem; color: var(--jaune); font-family: 'Nunito', sans-serif; font-size: 2rem; font-weight: 900; letter-spacing: .2em; text-align: center; outline: none; text-transform: uppercase; margin-bottom: .8rem; }
+.code-inp:focus { border-color: var(--jaune); }
+
+/* ── LOBBY ── */
+.player-list { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+.player-chip { background: var(--bg2); border: 2px solid var(--border); border-radius: 10px; padding: .6rem 1rem; font-weight: 700; font-size: .95rem; display: flex; justify-content: space-between; align-items: center; }
+.player-chip .you { font-size: .7rem; color: var(--muted); }
+
+/* ── GAME AREA ── */
+.game-wrap { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: .8rem; }
+
+/* opponents */
+.opponents { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
+.opp-chip { background: var(--bg2); border: 2px solid var(--border); border-radius: 10px; padding: .4rem .8rem; font-size: .8rem; font-weight: 700; transition: all .2s; }
+.opp-chip.active { border-color: var(--jaune); background: rgba(241,196,15,.1); color: var(--jaune); }
+
+/* pile area */
+.pile-area { display: flex; align-items: center; justify-content: center; gap: 1.5rem; }
+.color-dot { width: 28px; height: 28px; border-radius: 50%; border: 3px solid rgba(255,255,255,.3); flex-shrink: 0; }
+
+/* UNO card */
+.uno-card {
+  width: 70px; height: 105px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.4rem;
+  border: 3px solid rgba(255,255,255,.25); position: relative; cursor: pointer;
+  transition: all .15s; flex-shrink: 0; user-select: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,.4);
+}
+.uno-card:hover { transform: translateY(-4px) scale(1.05); }
+.uno-card:active { transform: scale(.97); }
+.uno-card.playable { box-shadow: 0 0 0 3px #fff, 0 4px 16px rgba(0,0,0,.4); }
+.uno-card.not-playable { opacity: .45; cursor: default; transform: none !important; }
+.uno-card .corner { position: absolute; font-size: .75rem; line-height: 1; }
+.uno-card .corner.tl { top: 5px; left: 7px; }
+.uno-card .corner.br { bottom: 5px; right: 7px; transform: rotate(180deg); }
+.uno-card .val { font-size: 1.6rem; }
+
+/* colors */
+.c-rouge  { background: var(--rouge); }
+.c-vert   { background: var(--vert); }
+.c-bleu   { background: var(--bleu); }
+.c-jaune  { background: var(--jaune); color: #1a1a2e !important; }
+.c-noir   { background: var(--noir); }
+.c-semoule { background: var(--semoule); }
+
+/* deck */
+.deck-card { background: linear-gradient(135deg, #c0392b, #2c3e50); border: 3px solid rgba(255,255,255,.2); border-radius: 12px; width: 70px; height: 105px; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1rem; cursor: pointer; color: white; box-shadow: 0 4px 12px rgba(0,0,0,.4); transition: all .15s; flex-shrink: 0; }
+.deck-card:active { transform: scale(.97); }
+.deck-card.disabled { opacity: .4; cursor: default; }
+
+/* hand */
+.hand-title { font-size: .72rem; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; font-weight: 700; text-align: center; }
+.hand-scroll { display: flex; gap: .4rem; overflow-x: auto; padding: .5rem .5rem 1rem; justify-content: flex-start; -webkit-overflow-scrolling: touch; }
+.hand-scroll::-webkit-scrollbar { height: 3px; }
+.hand-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* turn banner */
+.turn-banner { text-align: center; font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1rem; padding: .5rem 1rem; border-radius: 10px; }
+.turn-banner.my-turn { background: rgba(241,196,15,.15); color: var(--jaune); border: 2px solid rgba(241,196,15,.3); animation: pulse 1.5s ease-in-out infinite; }
+.turn-banner.wait { background: var(--bg2); color: var(--muted); border: 2px solid var(--border); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+/* color picker */
+.color-picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 200; display: flex; align-items: center; justify-content: center; display: none; }
+.color-picker-overlay.show { display: flex; }
+.color-picker-box { background: var(--bg2); border: 2px solid var(--border); border-radius: 20px; padding: 1.5rem; text-align: center; }
+.color-picker-box h3 { font-family: 'Nunito', sans-serif; font-size: 1.1rem; margin-bottom: 1rem; }
+.color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.color-pick-btn { width: 80px; height: 80px; border-radius: 16px; border: none; cursor: pointer; font-size: 1.5rem; transition: all .15s; }
+.color-pick-btn:active { transform: scale(.95); }
+
+/* semoule modal */
+.semoule-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 300; display: none; align-items: center; justify-content: center; padding: 1.5rem; }
+.semoule-overlay.show { display: flex; }
+.semoule-box { background: var(--bg2); border: 3px solid var(--semoule); border-radius: 20px; padding: 1.5rem; text-align: center; max-width: 300px; }
+.semoule-img { width: 120px; height: 120px; object-fit: cover; border-radius: 16px; margin-bottom: .8rem; border: 3px solid var(--semoule); }
+.semoule-title { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.3rem; color: var(--semoule); margin-bottom: .3rem; }
+.semoule-sub { color: var(--muted); font-size: .88rem; margin-bottom: 1rem; }
+
+/* result */
+.result-emoji { font-size: 5rem; margin-bottom: 1rem; animation: pop .5s cubic-bezier(.175,.885,.32,1.275); }
+@keyframes pop { 0%{transform:scale(0)} 100%{transform:scale(1)} }
+.result-title { font-family: 'Nunito', sans-serif; font-size: 2rem; font-weight: 900; text-align: center; margin-bottom: .4rem; }
+.result-sub { color: var(--muted); font-size: .9rem; text-align: center; margin-bottom: 1.5rem; }
+
+/* toast */
+.toast { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); background: var(--noir); border: 2px solid var(--border); border-radius: 10px; padding: .6rem 1.2rem; font-size: .88rem; color: var(--text); z-index: 999; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; }
+
+.draw-stack-badge { background: var(--rouge); color: #fff; font-family: 'Nunito', sans-serif; font-weight: 900; font-size: .8rem; padding: .2rem .6rem; border-radius: 20px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- Semoule modal -->
+<div class="semoule-overlay" id="semoule-modal">
+  <div class="semoule-box">
+    <img src="/semoule.jpg" class="semoule-img" alt="Amélia">
+    <div class="semoule-title">⚠️ ATTAQUE SEMOULE !</div>
+    <div class="semoule-sub" id="semoule-text">Amélia frappe ! Le prochain joueur pioche 2 cartes 🍲</div>
+    <button class="btn btn-primary" style="margin-top:.5rem" onclick="closeSemoule()">💀 Compris</button>
+  </div>
+</div>
+
+<!-- Color picker -->
+<div class="color-picker-overlay" id="color-picker">
+  <div class="color-picker-box">
+    <h3>Choisis une couleur</h3>
+    <div class="color-grid">
+      <button class="color-pick-btn c-rouge" onclick="pickColor('rouge')">🔴</button>
+      <button class="color-pick-btn c-vert"  onclick="pickColor('vert')">🟢</button>
+      <button class="color-pick-btn c-bleu"  onclick="pickColor('bleu')">🔵</button>
+      <button class="color-pick-btn c-jaune" onclick="pickColor('jaune')">🟡</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="page active" id="p-home">
+  <div class="logo"><span class="u">U</span><span class="n">N</span><span class="o">O</span></div>
+  <div class="sub">✨ BOUBISTOU GAMES ✨</div>
+  <button class="btn btn-primary" onclick="showPage('p-create')">🃏 Créer une partie</button>
+  <button class="btn btn-outline" onclick="showPage('p-join')">📲 Rejoindre</button>
+  <button class="btn btn-outline" style="margin-top:.5rem;border-color:var(--semoule);color:var(--semoule)" onclick="window.location.href='/'">🔥 Jouer à Undercover</button>
+</div>
+
+<!-- CREATE -->
+<div class="page" id="p-create">
+  <div class="section-title">🃏 Nouvelle partie</div>
+  <input id="create-name" class="inp" placeholder="Ton prénom..." maxlength="16">
+  <button class="btn btn-primary" onclick="createGame()">Créer →</button>
+  <button class="btn btn-outline" onclick="showPage('p-home')">← Retour</button>
+</div>
+
+<!-- JOIN -->
+<div class="page" id="p-join">
+  <div class="section-title">📲 Rejoindre</div>
+  <input id="join-code" class="code-inp" placeholder="CODE" maxlength="4" oninput="this.value=this.value.toUpperCase()">
+  <input id="join-name" class="inp" placeholder="Ton prénom..." maxlength="16">
+  <button class="btn btn-primary" onclick="joinGame()">Rejoindre →</button>
+  <button class="btn btn-outline" onclick="showPage('p-home')">← Retour</button>
+</div>
+
+<!-- LOBBY -->
+<div class="page" id="p-lobby">
+  <div class="section-title">Salle UNO</div>
+  <div class="code-big" id="lobby-code">----</div>
+  <p style="color:var(--muted);font-size:.85rem;text-align:center;margin-bottom:1rem" id="lobby-hint">Partage ce code !</p>
+  <div class="player-list" id="lobby-list"></div>
+  <button class="btn btn-primary" id="lobby-start" onclick="sendMsg({type:'uno_start'})" disabled>Lancer (2 min)</button>
+  <button class="btn btn-outline" onclick="leaveGame()">← Quitter</button>
+</div>
+
+<!-- GAME -->
+<div class="page" id="p-game">
+  <div class="game-wrap">
+    <!-- opponents -->
+    <div class="opponents" id="opponents"></div>
+
+    <!-- draw stack -->
+    <div id="draw-stack-area" style="text-align:center;display:none">
+      <span class="draw-stack-badge" id="draw-stack-label">+0 à piocher !</span>
+    </div>
+
+    <!-- turn banner -->
+    <div class="turn-banner wait" id="turn-banner">En attente...</div>
+
+    <!-- pile + deck -->
+    <div class="pile-area">
+      <div class="deck-card" id="deck-btn" onclick="drawCard()">🂠<br>Piocher</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem">
+        <div class="uno-card" id="top-card"></div>
+        <div style="display:flex;align-items:center;gap:.4rem">
+          <div class="color-dot" id="color-dot"></div>
+          <span style="font-size:.75rem;color:var(--muted)" id="color-label">couleur</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- my hand -->
+    <div class="hand-title">TA MAIN</div>
+    <div class="hand-scroll" id="my-hand"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="page" id="p-result">
+  <div class="result-emoji">🏆</div>
+  <div class="result-title" id="result-title">Victoire !</div>
+  <div class="result-sub" id="result-sub"></div>
+  <button class="btn btn-primary" id="result-replay" onclick="sendMsg({type:'uno_again'})" style="display:none">🔄 Rejouer</button>
+  <button class="btn btn-outline" onclick="leaveGame()">← Quitter</button>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────
+let ws = null, myName = '', myRoom = '', isHost = false;
+let pendingCardId = null, pendingNeedsColor = false;
+let gameState = null;
+
+// ── WS ─────────────────────────────────────────────────────
+function connect(onOpen) {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}`);
+  ws.onopen = onOpen;
+  ws.onmessage = e => handle(JSON.parse(e.data));
+  ws.onclose = () => {};
+}
+function sendMsg(obj) { if(ws && ws.readyState===1) ws.send(JSON.stringify(obj)); }
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function toast(msg, dur=2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ── ACTIONS ────────────────────────────────────────────────
+function createGame() {
+  const name = document.getElementById('create-name').value.trim();
+  if (!name) { toast('Entre ton prénom !'); return; }
+  myName = name; isHost = true;
+  connect(() => sendMsg({ type: 'uno_create', name }));
+}
+function joinGame() {
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  const name = document.getElementById('join-name').value.trim();
+  if (code.length !== 4) { toast('Code à 4 caractères !'); return; }
+  if (!name) { toast('Entre ton prénom !'); return; }
+  myName = name;
+  connect(() => sendMsg({ type: 'uno_join', code, name }));
+}
+function drawCard() {
+  if (!gameState || !gameState.isMyTurn) return;
+  sendMsg({ type: 'uno_draw' });
+}
+function playCard(cardId, needsColor) {
+  if (!gameState || !gameState.isMyTurn) return;
+  if (needsColor) {
+    pendingCardId = cardId;
+    pendingNeedsColor = true;
+    document.getElementById('color-picker').classList.add('show');
+  } else {
+    sendMsg({ type: 'uno_play', cardId });
+  }
+}
+function pickColor(color) {
+  document.getElementById('color-picker').classList.remove('show');
+  if (pendingCardId) {
+    sendMsg({ type: 'uno_play', cardId: pendingCardId, chosenColor: color });
+    pendingCardId = null;
+  }
+}
+function closeSemoule() {
+  document.getElementById('semoule-modal').classList.remove('show');
+}
+function leaveGame() {
+  if (ws) { ws.close(); ws = null; }
+  myName = ''; myRoom = ''; isHost = false;
+  showPage('p-home');
+}
+
+// ── HANDLE MESSAGES ────────────────────────────────────────
+function handle(msg) {
+  if (msg.type === 'error') { toast('⚠️ ' + msg.msg); return; }
+  if (msg.type === 'uno_created') { myRoom = msg.code; isHost = true; return; }
+  if (msg.type === 'uno_joined')  { myRoom = msg.code; isHost = msg.isHost; return; }
+
+  if (msg.type === 'uno_lobby') {
+    document.getElementById('lobby-code').textContent = msg.code || myRoom;
+    document.getElementById('lobby-hint').style.display = isHost ? 'block' : 'none';
+    const list = document.getElementById('lobby-list');
+    list.innerHTML = msg.players.map(p =>
+      `<div class="player-chip">${p}${p===myName?' <span class="you">← toi</span>':''}</div>`
+    ).join('');
+    const startBtn = document.getElementById('lobby-start');
+    if (isHost) {
+      startBtn.style.display = 'block';
+      startBtn.disabled = msg.players.length < 2;
+      startBtn.textContent = msg.players.length >= 2 ? `Lancer 🃏 (${msg.players.length} joueurs)` : `Lancer (${msg.players.length}/2 min)`;
+    } else {
+      startBtn.style.display = 'none';
+    }
+    showPage('p-lobby');
+    return;
+  }
+
+  if (msg.type === 'uno_state') {
+    gameState = msg;
+    renderGame(msg);
+    showPage('p-game');
+    return;
+  }
+
+  if (msg.type === 'uno_semoule') {
+    document.getElementById('semoule-text').textContent = `${msg.from} joue l'Attaque Semoule ! Le prochain joueur pioche 2 cartes 🍲`;
+    document.getElementById('semoule-modal').classList.add('show');
+    return;
+  }
+
+  if (msg.type === 'uno_winner') {
+    document.getElementById('result-title').textContent = msg.name === myName ? '🏆 Tu as gagné !' : `${msg.name} a gagné !`;
+    document.getElementById('result-sub').textContent = msg.name === myName ? 'Bien joué !' : 'Meilleure chance la prochaine fois !';
+    document.getElementById('result-replay').style.display = isHost ? 'block' : 'none';
+    showPage('p-result');
+    return;
+  }
+}
+
+// ── RENDER GAME ────────────────────────────────────────────
+function cardColor(card) {
+  if (card.special) return 'c-semoule';
+  return `c-${card.color}`;
+}
+function cardLabel(card) {
+  if (card.special) return '🍲';
+  if (card.value === 'joker') return '🌈';
+  if (card.value === '+4') return '+4';
+  if (card.value === '+2') return '+2';
+  if (card.value === 'passe') return '🚫';
+  if (card.value === 'inverse') return '↩️';
+  return card.value;
+}
+function colorStyle(color) {
+  const map = { rouge: '#e74c3c', vert: '#27ae60', bleu: '#2980b9', jaune: '#f1c40f', noir: '#2c3e50', semoule: '#8e44ad' };
+  return map[color] || '#888';
+}
+
+function renderGame(s) {
+  // turn banner
+  const banner = document.getElementById('turn-banner');
+  if (s.isMyTurn) {
+    banner.className = 'turn-banner my-turn';
+    banner.textContent = s.drawStack > 0 ? `⚡ Joue un +2/+4/Semoule ou pioche ${s.drawStack} !` : '🎯 À TOI DE JOUER !';
+  } else {
+    banner.className = 'turn-banner wait';
+    banner.textContent = `⏳ Tour de ${s.currentPlayer}...`;
+  }
+
+  // draw stack
+  const dsArea = document.getElementById('draw-stack-area');
+  if (s.drawStack > 0) {
+    dsArea.style.display = 'block';
+    document.getElementById('draw-stack-label').textContent = `⚡ +${s.drawStack} à piocher si tu passes !`;
+  } else {
+    dsArea.style.display = 'none';
+  }
+
+  // opponents
+  const opp = document.getElementById('opponents');
+  opp.innerHTML = s.handCounts.filter(p => p.name !== myName).map(p =>
+    `<div class="opp-chip ${p.name === s.currentPlayer ? 'active' : ''}">${p.name} · ${p.count} 🃏</div>`
+  ).join('');
+
+  // top card
+  const top = s.topCard;
+  const topEl = document.getElementById('top-card');
+  topEl.className = `uno-card ${cardColor(top)}`;
+  const lbl = cardLabel(top);
+  topEl.innerHTML = `<span class="corner tl">${lbl}</span><span class="val">${lbl}</span><span class="corner br">${lbl}</span>`;
+
+  // current color dot
+  document.getElementById('color-dot').style.background = colorStyle(s.currentColor);
+  document.getElementById('color-label').textContent = s.currentColor;
+
+  // deck btn
+  const deckBtn = document.getElementById('deck-btn');
+  deckBtn.className = s.isMyTurn ? 'deck-card' : 'deck-card disabled';
+
+  // my hand
+  const hand = document.getElementById('my-hand');
+  hand.innerHTML = s.yourHand.map(card => {
+    const canPlay = s.isMyTurn && canPlayCard(card, s);
+    const cls = canPlay ? 'playable' : 'not-playable';
+    const needsColor = card.color === 'noir';
+    const lbl = cardLabel(card);
+    return `<div class="uno-card ${cardColor(card)} ${cls}"
+      onclick="${canPlay ? `playCard('${card.id}', ${needsColor})` : ''}">
+      <span class="corner tl">${lbl}</span>
+      <span class="val">${card.special ? '<img src="/semoule.jpg" style="width:36px;height:36px;object-fit:cover;border-radius:6px">' : lbl}</span>
+      <span class="corner br">${lbl}</span>
+    </div>`;
+  }).join('');
+}
+
+function canPlayCard(card, s) {
+  if (card.special) return true;
+  if (s.drawStack > 0) return card.value === '+2' || card.value === '+4' || card.special;
+  if (card.color === 'noir') return true;
+  if (card.color === s.currentColor) return true;
+  if (card.value === s.topCard.value) return true;
+  return false;
+}
+</script>
+</body>
+</html>
